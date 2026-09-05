@@ -141,12 +141,25 @@ export function putSummary(id, data, { isPublic = null } = {}) {
 
 export function putError(id, error) {
   const prev = state.cache[id];
+
+  // An account with no career page still has a name and avatar in Blizzard's
+  // search index — worth showing, so the card reads as a person, not a failure.
+  const fromSearch = error.profile && {
+    username: error.profile.name,
+    avatar: error.profile.avatar,
+    namecard: error.profile.namecard,
+    title: error.profile.title,
+    endorsement: null,
+    competitive: null,
+    last_updated_at: error.profile.last_updated_at,
+  };
+
   state.cache[id] = {
     fetchedAt: Date.now(),
     ok: false,
     error: { message: error.message, kind: error.kind || 'error' },
-    isPublic: prev?.isPublic ?? null,
-    data: prev?.data ?? null, // keep the last good ranks visible, marked stale
+    isPublic: error.profile ? !!error.profile.is_public : (prev?.isPublic ?? null),
+    data: prev?.data ?? fromSearch ?? null, // keep the last good ranks if we had any
   };
   save();
 }

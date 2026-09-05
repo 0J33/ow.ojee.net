@@ -31,11 +31,12 @@ export const displayTag = (id) => String(id || '').replace(/-(\d+)$/, '#$1');
 export const prettyTag = (id) => (isFullTag(id) ? displayTag(id) : null);
 
 export class ApiError extends Error {
-  constructor(message, { status = 0, kind = 'error', retryAfter = null } = {}) {
+  constructor(message, { status = 0, kind = 'error', retryAfter = null, profile = null } = {}) {
     super(message);
     this.status = status;
-    this.kind = kind;             // 'notfound' | 'throttled' | 'network' | 'error'
+    this.kind = kind;             // 'notfound' | 'unlisted' | 'throttled' | 'network' | 'error'
     this.retryAfter = retryAfter; // seconds, when Blizzard is rate-limiting
+    this.profile = profile;       // search record, when the account exists but has no career page
   }
 }
 
@@ -155,11 +156,14 @@ export async function resolvePlayer(id, opts) {
       } catch { /* try the next form */ }
     }
 
+    // The account is in Blizzard's index but has no career page. Blizzard's own
+    // site 404s these rather than showing a "profile is private" page, so the
+    // cause is genuinely ambiguous — say so instead of guessing confidently.
     throw new ApiError(
       hit.is_public === false
-        ? 'Career profile is private — ask them to set it to public in Overwatch 2'
-        : "Account exists, but Blizzard isn't serving its career profile — it's almost certainly set to private",
-      { status: 404, kind: 'private' }
+        ? 'Career profile is set to private'
+        : 'Blizzard has no public career page for this account',
+      { status: 404, kind: 'unlisted', profile: hit }
     );
   }
 }

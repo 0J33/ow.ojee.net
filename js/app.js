@@ -182,10 +182,10 @@ async function commitAdd(id, label = '') {
     store.removeAccount(id);
     toast(`No account named ${displayTag(id)} — check the digits after the #`, 'err', 6000);
     render();
-  } else if (entry?.error?.kind === 'private') {
-    // Real account, just not published. Keep it — it starts working the
-    // moment they flip the profile to public.
-    toast(`${displayTag(id)} added, but their profile is private`, 'err', 6000);
+  } else if (entry?.error?.kind === 'unlisted') {
+    // Real account, no career page. Keep it — it starts working the moment
+    // Blizzard serves the profile again.
+    toast(`${displayTag(id)} added, but Blizzard serves no profile for it`, 'err', 6000);
   }
 }
 
@@ -331,8 +331,10 @@ function cardHTML(account) {
   if (season && liveSeason && season < liveSeason)
     badges.push(`<span class="badge warn" title="These ranks are from season ${season}, not the current season — this player has not placed yet">S${season} &middot; not placed</span>`);
   else if (season) badges.push(`<span class="badge">S${season}</span>`);
-  if (entry && (entry.isPublic === false || entry.error?.kind === 'private'))
-    badges.push('<span class="badge err" title="This career profile is not public, so its ranks cannot be read">Private</span>');
+  if (entry && entry.isPublic === false)
+    badges.push('<span class="badge err" title="This career profile is set to private, so its ranks cannot be read">Private</span>');
+  else if (entry?.error?.kind === 'unlisted')
+    badges.push('<span class="badge err" title="Blizzard serves no career page for this account">No profile</span>');
   if (busy.has(account.id)) badges.push('<span class="badge"><span class="spin">&#10227;</span></span>');
 
   const inGroup = group.includes(account.id);
@@ -364,8 +366,14 @@ function cardHTML(account) {
     </div>
 
     ${entry && !entry.ok ? `<div class="cardError">
-        ${entry.error.kind === 'private' ? '&#128274; ' : ''}${esc(entry.error.message)}${data ? ' — showing last known ranks' : ''}
-        ${entry.error.kind === 'private' ? '<br /><span class="helpText">In Overwatch&nbsp;2: Options &rarr; Social &rarr; Career Profile &rarr; <b>Public</b></span>' : ''}
+        ${entry.error.kind === 'unlisted' ? '&#128274; ' : ''}${esc(entry.error.message)}${data?.competitive ? ' — showing last known ranks' : ''}
+        ${entry.error.kind === 'unlisted' ? `<br /><span class="helpText">
+          Blizzard 404s this profile, so the usual causes are: career profile set to
+          <b>private</b> (Options &rarr; Social), the BattleTag was <b>changed</b>, or the
+          account has no Overwatch&nbsp;2 profile. Blizzard&rsquo;s search still knows the
+          account, so it will start working on its own once the profile is served again.
+          <a href="${esc(CAREER_URL(account.id))}" target="_blank" rel="noopener">Check on Blizzard &#8599;</a>
+        </span>` : ''}
       </div>` : ''}
     ${entry?.ok && !ranks ? `<div class="cardError">No competitive ranks on this profile${entry.isPublic === false ? ' — the profile is private' : ' — private profile, or no competitive played'}</div>` : ''}
     ${account.note ? `<div class="cardNote">${esc(account.note)}</div>` : ''}
