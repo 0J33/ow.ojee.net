@@ -31,12 +31,13 @@ export const displayTag = (id) => String(id || '').replace(/-(\d+)$/, '#$1');
 export const prettyTag = (id) => (isFullTag(id) ? displayTag(id) : null);
 
 export class ApiError extends Error {
-  constructor(message, { status = 0, kind = 'error', retryAfter = null, profile = null } = {}) {
+  constructor(message, { status = 0, kind = 'error', retryAfter = null, profile = null, candidates = null } = {}) {
     super(message);
     this.status = status;
-    this.kind = kind;             // 'notfound' | 'unlisted' | 'throttled' | 'network' | 'error'
+    this.kind = kind;             // 'notfound' | 'unlisted' | 'ambiguous' | 'throttled' | 'network' | 'error'
     this.retryAfter = retryAfter; // seconds, when Blizzard is rate-limiting
     this.profile = profile;       // search record, when the account exists but has no career page
+    this.candidates = candidates; // same-name accounts, when the tag cannot be pinned down
   }
 }
 
@@ -111,15 +112,18 @@ export async function pool(items, worker, limit = MAX_CONCURRENT) {
 }
 
 /**
- * Resolve a player to their career summary, working around a real quirk:
- * a profile can be present in Blizzard's search index while its career page
- * 404s. When the BattleTag lookup fails we re-check via search to tell three
- * cases apart, because they need completely different answers from the user:
+ * Resolve a player to their career summary.
  *
- *   · search finds nothing            -> the BattleTag is wrong
- *   · search finds them, page 404s    -> profile exists but isn't published
- *                                        (private, in practice)
- *   · an alternate id form works      -> use it from now on
+ * Blizzard's search matches on NAME ONLY — searching the full tag "Ojee-21788"
+ * returns every "Ojee" — and the results carry no discriminator. So when a
+ * direct tag lookup 404s, we must never fall back to "first result with the
+ * right name": that silently adds a stranger's account. Instead:
+ *
+ *   · exact id match, alternate form works -> use it
+ *   · exact id match, still no career page -> 'unlisted'
+ *   · name matches but no exact id         -> 'ambiguous', hand back the
+ *                                             candidates so the user picks
+ *   · nothing at all                       -> 'notfound'
  *
  * @returns {{ data:object, resolvedId:string }}
  */
@@ -129,41 +133,38 @@ export async function resolvePlayer(id, opts) {
   } catch (err) {
     if (err.kind !== 'notfound') throw err;
 
-    // Search wants the dash form ("Name-1234"), not the display form.
     const name = displayTag(id).split('#')[0];
-    let hit = null;
+    let candidates = [];
     try {
-      const res = await searchPlayers(id, { limit: 5, ...opts });
-      // Only trust an exact match — a typo'd tag must not silently resolve
-      // to some other player who happens to share the name.
-      hit = res.results?.find(
-        (r) => r.player_id === id || r.blizzard_id === id ||
-               r.name?.toLowerCase() === name.toLowerCase()
-      ) || null;
-      if (!hit) {
-        const byName = await searchPlayers(name, { limit: 50, ...opts });
-        hit = byName.results?.find((r) => r.blizzard_id === id || r.player_id === id) || null;
-      }
+      const res = await searchPlayers(name, { limit: 50, ...opts });
+      candidates = (res.results || []).filter(
+        (r) => r.name?.toLowerCase() === name.toLowerCase()
+      );
     } catch { /* fall through to the original not-found */ }
 
-    if (!hit) throw err;
+    if (!candidates.length) throw err;
 
-    // The account is real. Try the other id form before concluding anything.
-    const alternates = [hit.player_id, hit.blizzard_id].filter((x) => x && x !== id);
-    for (const alt of alternates) {
-      try {
-        return { data: await fetchSummary(alt, opts), resolvedId: alt };
-      } catch { /* try the next form */ }
+    // Only an id match is proof of identity. A shared name is not.
+    const exact = candidates.find((r) => r.player_id === id || r.blizzard_id === id);
+
+    if (exact) {
+      for (const alt of [exact.player_id, exact.blizzard_id].filter((x) => x && x !== id)) {
+        try {
+          return { data: await fetchSummary(alt, opts), resolvedId: alt };
+        } catch { /* try the next id form */ }
+      }
+      throw new ApiError(
+        exact.is_public === false
+          ? 'Career profile is set to private'
+          : 'Blizzard has no public career page for this account',
+        { status: 404, kind: 'unlisted', profile: exact }
+      );
     }
 
-    // The account is in Blizzard's index but has no career page. Blizzard's own
-    // site 404s these rather than showing a "profile is private" page, so the
-    // cause is genuinely ambiguous — say so instead of guessing confidently.
     throw new ApiError(
-      hit.is_public === false
-        ? 'Career profile is set to private'
-        : 'Blizzard has no public career page for this account',
-      { status: 404, kind: 'unlisted', profile: hit }
+      `Blizzard can't serve ${displayTag(id)} directly, and its search ignores the ` +
+      `digits after the # — so ${candidates.length} accounts named ${name} match. Pick yours.`,
+      { status: 404, kind: 'ambiguous', candidates }
     );
   }
 }

@@ -33,6 +33,9 @@ const AVATAR_FALLBACK = 'data:image/svg+xml;utf8,' + encodeURIComponent(
 );
 
 const busy = new Set();          // ids currently being fetched
+// Same-name accounts from a failed tag lookup, kept until the add flow can
+// put them in front of the user.
+const ambiguous = new Map();
 let refreshingAll = false;
 
 /* ─── Helpers ─────────────────────────────────────────────────────────────── */
@@ -109,6 +112,7 @@ async function refreshOne(id, { force = false } = {}) {
     return changes;
   } catch (err) {
     if (err.name === 'AbortError') return;
+    if (err.kind === 'ambiguous') ambiguous.set(id, err.candidates);
     store.putError(id, err instanceof ApiError ? err : new ApiError(err.message));
     if (!refreshingAll) toast(`${displayTag(id)}: ${err.message}`, 'err', 5000);
   } finally {
@@ -182,6 +186,15 @@ async function commitAdd(id, label = '') {
     store.removeAccount(id);
     toast(`No account named ${displayTag(id)} — check the digits after the #`, 'err', 6000);
     render();
+  } else if (entry?.error?.kind === 'ambiguous') {
+    // Never keep a card we cannot prove belongs to the right person.
+    const candidates = ambiguous.get(id) || [];
+    store.removeAccount(id);
+    ambiguous.delete(id);
+    render();
+    await openCandidatePicker(displayTag(id).split('#')[0], {
+      results: candidates, typedTag: displayTag(id),
+    });
   } else if (entry?.error?.kind === 'unlisted') {
     // Real account, no career page. Keep it — it starts working the moment
     // Blizzard serves the profile again.
@@ -189,28 +202,54 @@ async function commitAdd(id, label = '') {
   }
 }
 
-/** Name-only input: search, then show who they might mean, ranks included. */
-async function openCandidatePicker(name) {
-  const res = await searchPlayers(name, { limit: 24 });
-  const results = (res.results || []).filter((r) => r.is_public);
 
-  if (!res.total) throw new Error(`No player found named "${name}"`);
-  if (!results.length) {
-    throw new Error(`Found ${res.total} player(s) named "${name}" but every profile is private`);
+/**
+ * Track a BattleTag whose career page Blizzard will not serve.
+ * Blizzard's search index only contains public profiles — a scan of 12 name
+ * searches returned 164 public and 0 private — so an account that resolves as
+ * a tag but is missing from search is, in practice, not set to public.
+ * We keep the card: it starts working by itself once that changes.
+ */
+function keepUnresolved(id) {
+  const result = store.addAccount({ id });
+  if (!result.added) { toast('Already tracking that account', 'err'); return; }
+  store.putError(id, new ApiError(
+    'Not visible — this profile is almost certainly not set to public',
+    { status: 404, kind: 'unlisted' }
+  ));
+  render();
+  toast(`${displayTag(id)} kept — it will fill in once the profile is public`, 'info', 6000);
+}
+
+/**
+ * Show every account with this name so the user can pick the right one.
+ * `results` may be supplied by a caller that has already searched.
+ */
+async function openCandidatePicker(name, { results = null, typedTag = null } = {}) {
+  if (!results) {
+    const res = await searchPlayers(name, { limit: 24 });
+    results = res.results || [];
+    if (!results.length) throw new Error(`No player found named "${name}"`);
   }
+  if (!results.length) throw new Error(`No account named "${name}" could be listed`);
 
   openModal(`
     <h2 class="modalTitle">Which ${esc(name)}?</h2>
     <p class="helpText">
-      Blizzard&rsquo;s search does not expose the number after the&nbsp;#, so pick by
-      avatar, title and rank. Adding by full BattleTag skips this step.
+      ${typedTag
+        ? `Blizzard has no career page it will serve for <b>${esc(typedTag)}</b>, and its
+           search ignores the digits after the&nbsp;#&nbsp;&mdash; so these
+           ${results.length} accounts all match. Pick by avatar, title and rank.`
+        : `Blizzard&rsquo;s search does not expose the number after the&nbsp;#, so pick by
+           avatar, title and rank. Adding by full BattleTag skips this step.`}
     </p>
     <div class="candidateList" id="candidateList">
       ${results.map((r, i) => `
         <button class="candidate" data-i="${i}" type="button">
           <img src="${esc(r.avatar)}" alt="" loading="lazy" />
           <span class="candidateMeta">
-            <span class="candidateName">${esc(r.name)}</span>
+            <span class="candidateName">${esc(r.name)}
+              ${r.is_public === false ? '<span class="badge err">Private</span>' : ''}</span>
             <span class="cardTitle">${esc(r.title || '')}</span>
             <span class="candidateRanks" data-ranks="${i}">
               <span class="miniRank">loading ranks&hellip;</span>
@@ -218,8 +257,18 @@ async function openCandidatePicker(name) {
           </span>
         </button>`).join('')}
     </div>
-    <div class="modalActions"><button class="btn" data-close type="button">Cancel</button></div>
+    <div class="modalActions">
+      ${typedTag ? `<button class="btn" id="keepTyped" type="button">None of these is mine</button>` : ''}
+      <button class="btn" data-close type="button">Cancel</button>
+    </div>
   `);
+
+  if (typedTag) {
+    $('#keepTyped').addEventListener('click', () => {
+      closeModal();
+      keepUnresolved(normalizeTag(typedTag));
+    });
+  }
 
   $('#candidateList').addEventListener('click', (e) => {
     const btn = e.target.closest('.candidate');
@@ -368,10 +417,11 @@ function cardHTML(account) {
     ${entry && !entry.ok ? `<div class="cardError">
         ${entry.error.kind === 'unlisted' ? '&#128274; ' : ''}${esc(entry.error.message)}${data?.competitive ? ' — showing last known ranks' : ''}
         ${entry.error.kind === 'unlisted' ? `<br /><span class="helpText">
-          Blizzard 404s this profile, so the usual causes are: career profile set to
-          <b>private</b> (Options &rarr; Social), the BattleTag was <b>changed</b>, or the
-          account has no Overwatch&nbsp;2 profile. Blizzard&rsquo;s search still knows the
-          account, so it will start working on its own once the profile is served again.
+          Blizzard only publishes a career page for profiles set to <b>public</b>, and
+          only lists those in search &mdash; so this almost always means the profile is
+          <b>private</b> or <b>friends only</b>. Fix it in Overwatch&nbsp;2 under
+          <b>Options &rarr; Social &rarr; Career Profile</b>, then refresh here.
+          Less often: the BattleTag was changed, or the account has no Overwatch&nbsp;2 profile.
           <a href="${esc(CAREER_URL(account.id))}" target="_blank" rel="noopener">Check on Blizzard &#8599;</a>
         </span>` : ''}
       </div>` : ''}
