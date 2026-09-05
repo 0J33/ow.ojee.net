@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>OW Rank Tracker — ojee.net</title>
+<meta name="description" content="Track your Overwatch 2 friends' ranks across tank, damage, support and open queue, and see at a glance who you can group with." />
+<meta name="theme-color" content="#04081a" />
+<link rel="icon" type="image/png" href="res/favicon.png" />
+<link rel="apple-touch-icon" href="res/favicon.png" />
+<link rel="canonical" href="https://ow.ojee.net/" />
+<meta property="og:title" content="OW Rank Tracker" />
+<meta property="og:description" content="Every friend's rank in every role, and whether you can queue together." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://ow.ojee.net/" />
+<link rel="preconnect" href="https://overfast-api.tekrop.fr" />
+<link rel="preconnect" href="https://static.playoverwatch.com" />
+<link rel="preconnect" href="https://d15f34w2p8l1cc.cloudfront.net" />
+<link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+<canvas id="gridBg" aria-hidden="true"></canvas>
+
+<div class="container">
+
+  <header class="header">
+    <a class="homeLink" href="https://ojee.net/">&#8592; ojee.net</a>
+    <h1 class="headerTitle">Rank Tracker</h1>
+    <p class="headerSubtitle">Overwatch 2 &middot; who can you queue with</p>
+  </header>
+
+  <!-- ─── Toolbar ─────────────────────────────────────────────────────── -->
+  <section class="panel">
+    <div class="toolbar">
+      <form class="addForm" id="addForm" autocomplete="off">
+        <input class="input" id="addInput" type="text" spellcheck="false"
+               placeholder="BattleTag — e.g. Ojee#2117 (or just a name to search)"
+               aria-label="BattleTag or name to add" />
+        <button class="btn btnPrimary" type="submit" id="addBtn">Add</button>
+      </form>
+
+      <div class="toolbarSpacer"></div>
+
+      <div class="toolbarGroup">
+        <div class="segment" role="group" aria-label="Platform">
+          <button class="segmentBtn" data-platform="pc" type="button">PC</button>
+          <button class="segmentBtn" data-platform="console" type="button">Console</button>
+        </div>
+        <div class="segment" role="group" aria-label="View">
+          <button class="segmentBtn" data-view="grid" type="button" title="Card view">Cards</button>
+          <button class="segmentBtn" data-view="table" type="button" title="Compact table">Table</button>
+        </div>
+        <select class="select" id="sortSelect" aria-label="Sort by">
+          <option value="rank">Sort: highest rank</option>
+          <option value="name">Sort: name</option>
+          <option value="added">Sort: date added</option>
+          <option value="changed">Sort: recently changed</option>
+          <option value="gap">Sort: closest to anchor</option>
+        </select>
+        <button class="btn" id="refreshBtn" type="button" title="Refresh every account now">Refresh</button>
+        <button class="btn" id="dataBtn" type="button" title="Import / export your tracked list">Data</button>
+      </div>
+    </div>
+  </section>
+
+  <div class="statusBar" id="statusBar"></div>
+
+  <main id="content" aria-live="polite"></main>
+
+  <footer class="footer">
+    <p>
+      Ranks come from public Blizzard career profiles via the
+      <a href="https://overfast-api.tekrop.fr" target="_blank" rel="noopener">OverFast API</a>.
+      A profile must be set to <b>public</b> in Overwatch&nbsp;2 for its ranks to appear, and
+      Blizzard&rsquo;s profile data updates on a delay &mdash; it is not live.
+    </p>
+    <p>
+      Grouping verdicts follow Blizzard&rsquo;s wide-group rules: more than <b>5 skill divisions</b>
+      apart makes a Diamond-and-below group wide, <b>3</b> if anyone is Master, and any group with a
+      Grandmaster or Champion is always wide (capped at 2 players).
+      Wide groups still queue &mdash; they just face other wide groups, wait longer and earn less.
+      Blizzard adjusts these between seasons; see
+      <a href="https://overwatch.blizzard.com/en-us/news/23973730/competitive-play-update-teaming-up-for-better-matches/" target="_blank" rel="noopener">their competitive update</a>.
+    </p>
+    <p>
+      Your tracked list is stored on this device only &mdash; nothing is uploaded. Use
+      <b>Data</b> to move it between devices.
+      <span id="buildInfo"></span>
+    </p>
+  </footer>
+
+</div>
+
+<!-- ─── Group tray ─────────────────────────────────────────────────────── -->
+<div class="groupTray" id="groupTray" hidden>
+  <div class="groupTrayInner">
+    <div class="field">
+      <span class="fieldLabel">Group</span>
+      <div class="groupMembers" id="groupMembers"></div>
+    </div>
+    <div class="toolbarSpacer"></div>
+    <div class="groupVerdicts" id="groupVerdicts"></div>
+    <button class="btn btnSm" id="groupClear" type="button">Clear</button>
+  </div>
+</div>
+
+<!-- ─── Modal shell ────────────────────────────────────────────────────── -->
+<div class="modalOverlay" id="modal" hidden>
+  <div class="modalContent" id="modalContent" role="dialog" aria-modal="true"></div>
+</div>
+
+<div class="toastWrap" id="toasts"></div>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
