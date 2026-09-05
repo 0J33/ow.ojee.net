@@ -59,12 +59,15 @@ js/api.js       OverFast client, id resolution, concurrency pool
 js/store.js     localStorage, rank history, import/export
 js/app.js       rendering and events
 js/bg.js        animated plus-grid backdrop
+test/           unit tests for the ladder + grouping rules
 ```
 
 ## Development
 
 ```sh
-python3 -m http.server 8791 --bind 127.0.0.1
+python3 -m http.server 8791 --bind 127.0.0.1   # serve
+node test/ranks.test.mjs                       # check the grouping rules
 ```
 
-No dependencies, no build. Deployment is a push to `main`; GitHub Pages serves the repo root.
+No dependencies, no build. The grouping rules are the one part that can be wrong
+*silently* — a bad verdict still looks like a confident answer — so they have a test. Deployment is a push to `main`; GitHub Pages serves the repo root.
