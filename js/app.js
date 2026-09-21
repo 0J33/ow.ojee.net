@@ -23,6 +23,40 @@ const el = {
   groupVerdicts: $('#groupVerdicts'), groupClear: $('#groupClear'),
 };
 
+/* ─── Icons ───────────────────────────────────────────────────────────────
+   Material Symbols Outlined 400 — the pack every other ojee surface draws
+   from. Inlined as path data because this page has no build step and no
+   icon font.
+
+   These used to be HTML entities: a 🎯 for the empty state, a 🔒 on an
+   unlisted profile, a ⚠ on an over-cap group. An emoji is a picture the
+   browser picks — it arrives in full colour, at whatever weight the
+   platform's font decided, and it looked like a sticker dropped onto the
+   page. ● ○ ⟳ ✕ ⓘ ↗ were the same problem more quietly: glyphs standing in
+   for icons, each at the mercy of the body font's metrics.
+
+   ▲ ▼ on the rank delta and the ← in the header link stay as text. Those
+   are typography, not icons.                                              */
+const ICON = {
+  refresh: 'M480-160q-133 0-226.5-93.5T160-480q0-133 93.5-226.5T480-800q85 0 149 34.5T740-671v-129h60v254H546v-60h168q-38-60-97-97t-137-37q-109 0-184.5 75.5T220-480q0 109 75.5 184.5T480-220q83 0 152-47.5T728-393h62q-29 105-115 169t-195 64Z',
+  info: 'M453-280h60v-240h-60v240Zm50.5-323.2q9.5-9.2 9.5-22.8 0-14.45-9.48-24.22-9.48-9.78-23.5-9.78t-23.52 9.78Q447-640.45 447-626q0 13.6 9.48 22.8 9.48 9.2 23.5 9.2t23.52-9.2ZM480.27-80q-82.74 0-155.5-31.5Q252-143 197.5-197.5t-86-127.34Q80-397.68 80-480.5t31.5-155.66Q143-709 197.5-763t127.34-85.5Q397.68-880 480.5-880t155.66 31.5Q709-817 763-763t85.5 127Q880-563 880-480.27q0 82.74-31.5 155.5Q817-252 763-197.68q-54 54.31-127 86Q563-80 480.27-80Zm.23-60Q622-140 721-239.5t99-241Q820-622 721.19-721T480-820q-141 0-240.5 98.81T140-480q0 141 99.5 240.5t241 99.5Zm-.5-340Z',
+  close: 'm249-207-42-42 231-231-231-231 42-42 231 231 231-231 42 42-231 231 231 231-42 42-231-231-231 231Z',
+  lock: 'M220-80q-24.75 0-42.37-17.63Q160-115.25 160-140v-434q0-24.75 17.63-42.38Q195.25-634 220-634h70v-96q0-78.85 55.61-134.42Q401.21-920 480.11-920q78.89 0 134.39 55.58Q670-808.85 670-730v96h70q24.75 0 42.38 17.62Q800-598.75 800-574v434q0 24.75-17.62 42.37Q764.75-80 740-80H220Zm0-60h520v-434H220v434Zm314.5-162.03Q557-324.06 557-355q0-30-22.67-54.5t-54.5-24.5q-31.83 0-54.33 24.5t-22.5 55q0 30.5 22.67 52.5t54.5 22q31.83 0 54.33-22.03ZM350-634h260v-96q0-54.17-37.88-92.08-37.88-37.92-92-37.92T388-822.08q-38 37.91-38 92.08v96ZM220-140v-434 434Z',
+  external: 'M180-120q-24 0-42-18t-18-42v-600q0-24 18-42t42-18h279v60H180v600h600v-279h60v279q0 24-18 42t-42 18H180Zm202-219-42-43 398-398H519v-60h321v321h-60v-218L382-339Z',
+  warn: 'm40-120 440-760 440 760H40Zm104-60h672L480-760 144-180Zm361.5-65.68q8.5-8.67 8.5-21.5 0-12.82-8.68-21.32-8.67-8.5-21.5-8.5-12.82 0-21.32 8.68-8.5 8.67-8.5 21.5 0 12.82 8.68 21.32 8.67 8.5 21.5 8.5 12.82 0 21.32-8.68ZM454-348h60v-224h-60v224Zm26-122Z',
+  target: 'M324-111.5Q251-143 197-197t-85.5-127Q80-397 80-480t31.5-156Q143-709 197-763t127-85.5Q397-880 480-880t156 31.5Q709-817 763-763t85.5 127Q880-563 880-480t-31.5 156Q817-251 763-197t-127 85.5Q563-80 480-80t-156-31.5ZM721-239q99-99 99-241t-99-241q-99-99-241-99t-241 99q-99 99-99 241t99 241q99 99 241 99t241-99Zm-411-71q-70-70-70-170t70-170q70-70 170-70t170 70q70 70 70 170t-70 170q-70 70-170 70t-170-70Zm297.5-42.5Q660-405 660-480t-52.5-127.5Q555-660 480-660t-127.5 52.5Q300-555 300-480t52.5 127.5Q405-300 480-300t127.5-52.5Zm-184-71Q400-447 400-480t23.5-56.5Q447-560 480-560t56.5 23.5Q560-513 560-480t-23.5 56.5Q513-400 480-400t-56.5-23.5Z',
+  dotOn: 'M612-348q54-54 54-132t-54-132q-54-54-132-54t-132 54q-54 54-54 132t54 132q54 54 132 54t132-54ZM480-80q-82 0-155-31.5t-127.5-86Q143-252 111.5-325T80-480q0-83 31.5-156t86-127Q252-817 325-848.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 82-31.5 155T763-197.5q-54 54.5-127 86T480-80Zm0-60q142 0 241-99.5T820-480q0-142-99-241t-241-99q-141 0-240.5 99T140-480q0 141 99.5 240.5T480-140Z',
+  dotOff: 'M480-80q-82 0-155-31.5t-127.5-86Q143-252 111.5-325T80-480q0-83 31.5-156t86-127Q252-817 325-848.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 82-31.5 155T763-197.5q-54 54.5-127 86T480-80Zm0-60q142 0 241-99.5T820-480q0-142-99-241t-241-99q-141 0-240.5 99T140-480q0 141 99.5 240.5T480-140Z',
+  up: 'm280-400 200-201 200 201H280Z',
+  down: 'M480-360 280-559h400L480-360Z',
+};
+
+/* An icon as an HTML string, since everything here renders by innerHTML.
+   `currentColor` so it inherits whatever the button or badge already sets. */
+const icon = (name, size = 16) =>
+  `<svg class="ic" viewBox="0 -960 960 960" width="${size}" height="${size}"`
+  + ` fill="currentColor" aria-hidden="true"><path d="${ICON[name]}"/></svg>`;
+
 /* Neutral silhouette shown while an avatar loads, or when a profile has none.
    Deliberately not the site favicon — that reads as "this is ojee", not "no photo". */
 const AVATAR_FALLBACK = 'data:image/svg+xml;utf8,' + encodeURIComponent(
@@ -129,7 +163,7 @@ async function refreshAll({ force = false } = {}) {
 
   refreshingAll = true;
   el.refreshBtn.disabled = true;
-  el.refreshBtn.innerHTML = '<span class="spin">&#10227;</span> Syncing';
+  el.refreshBtn.innerHTML = `<span class="spin">${icon('refresh', 15)}</span> Syncing`;
   render();
 
   const before = new Set();
@@ -384,7 +418,7 @@ function cardHTML(account) {
     badges.push('<span class="badge err" title="This career profile is set to private, so its ranks cannot be read">Private</span>');
   else if (entry?.error?.kind === 'unlisted')
     badges.push('<span class="badge err" title="Blizzard serves no career page for this account">No profile</span>');
-  if (busy.has(account.id)) badges.push('<span class="badge"><span class="spin">&#10227;</span></span>');
+  if (busy.has(account.id)) badges.push(`<span class="badge"><span class="spin">${icon('refresh', 12)}</span></span>`);
 
   const inGroup = group.includes(account.id);
 
@@ -407,22 +441,22 @@ function cardHTML(account) {
         ${data?.title ? `<div class="cardTitle">${esc(data.title)}</div>` : ''}
       </div>
       <div class="cardTools">
-        <button class="iconBtn" data-act="group" title="${inGroup ? 'Remove from group' : 'Add to group'}">${inGroup ? '&#9679;' : '&#9675;'}</button>
-        <button class="iconBtn" data-act="detail" title="Full profile and rank history">&#9432;</button>
-        <button class="iconBtn" data-act="refresh" title="Refresh this account">&#10227;</button>
-        <button class="iconBtn" data-act="remove" title="Stop tracking">&#10005;</button>
+        <button class="iconBtn" data-act="group" title="${inGroup ? 'Remove from group' : 'Add to group'}">${icon(inGroup ? 'dotOn' : 'dotOff')}</button>
+        <button class="iconBtn" data-act="detail" title="Full profile and rank history">${icon('info')}</button>
+        <button class="iconBtn" data-act="refresh" title="Refresh this account">${icon('refresh')}</button>
+        <button class="iconBtn" data-act="remove" title="Stop tracking">${icon('close')}</button>
       </div>
     </div>
 
     ${entry && !entry.ok ? `<div class="cardError">
-        ${entry.error.kind === 'unlisted' ? '&#128274; ' : ''}${esc(entry.error.message)}${data?.competitive ? ' — showing last known ranks' : ''}
+        ${entry.error.kind === 'unlisted' ? icon('lock', 14) + ' ' : ''}${esc(entry.error.message)}${data?.competitive ? ' — showing last known ranks' : ''}
         ${entry.error.kind === 'unlisted' ? `<br /><span class="helpText">
           Blizzard only publishes a career page for profiles set to <b>public</b>, and
           only lists those in search &mdash; so this almost always means the profile is
           <b>private</b> or <b>friends only</b>. Fix it in Overwatch&nbsp;2 under
           <b>Options &rarr; Social &rarr; Career Profile</b>, then refresh here.
           Less often: the BattleTag was changed, or the account has no Overwatch&nbsp;2 profile.
-          <a href="${esc(CAREER_URL(account.id))}" target="_blank" rel="noopener">Check on Blizzard &#8599;</a>
+          <a href="${esc(CAREER_URL(account.id))}" target="_blank" rel="noopener">Check on Blizzard ${icon('external', 13)}</a>
         </span>` : ''}
       </div>` : ''}
     ${entry?.ok && !ranks ? `<div class="cardError">No competitive ranks on this profile${entry.isPublic === false ? ' — the profile is private' : ' — private profile, or no competitive played'}</div>` : ''}
@@ -524,7 +558,7 @@ function renderGroupTray() {
     return `<span class="groupChip">
       <img src="${esc(entry?.data?.avatar || AVATAR_FALLBACK)}" alt="" />
       ${esc(entry?.data?.username || displayTag(id))}
-      <button class="iconBtn" data-drop="${esc(id)}" title="Remove">&#10005;</button></span>`;
+      <button class="iconBtn" data-drop="${esc(id)}" title="Remove">${icon('close', 14)}</button></span>`;
   }).join('');
 
   el.groupVerdicts.innerHTML = ROLES.map((role) => {
@@ -537,7 +571,7 @@ function renderGroupTray() {
     const label = !decided
       ? (v.ranked === 1 ? 'only 1 ranked' : 'no ranks')
       : status === 'narrow' ? `narrow &middot; ${v.gap}` : `wide &middot; ${v.gap}`;
-    const warn = v.overCap ? ' &#9888; max 2 at GM+' : '';
+    const warn = v.overCap ? ` ${icon('warn', 14)} max 2 at GM+` : '';
     const missing = decided && v.unrankedCount ? ` (${v.unrankedCount} unranked)` : '';
     return `<span class="verdict ${status}" title="${esc(v.reason)}${v.overCap ? ' — Grandmaster and above are capped at 2-player groups' : ''}">
       <b style="color:${role.color}">${role.short}</b> ${label}${missing}${warn}</span>`;
@@ -562,7 +596,7 @@ function render() {
   if (!accounts.length) {
     el.content.innerHTML = `
       <div class="panel emptyState">
-        <div class="emptyIcon">&#127919;</div>
+        <div class="emptyIcon">${icon('target', 44)}</div>
         <h3>No accounts tracked yet</h3>
         <p>Add a BattleTag above &mdash; <b>Name#1234</b> looks the account up directly.<br />
            A bare name searches instead, and you pick from the matches.</p>

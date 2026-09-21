@@ -112,10 +112,21 @@ a { color:var(--ow-orange); }
 
 .iconBtn {
   background:transparent; border:1px solid transparent; color:var(--ow-text-dim);
-  cursor:pointer; padding:4px 7px; font-size:.95rem; line-height:1;
+  cursor:pointer; padding:4px 7px; font-size:.95rem; line-height:0;
   transition:all .18s; clip-path:var(--bevel-sm); font-family:var(--ow-font-body);
 }
+/* The button is a square around a 16px glyph rather than a line of text. */
+.iconBtn .ic { vertical-align:middle; }
 .iconBtn:hover { color:var(--ow-orange); background:var(--ow-panel-hover); }
+
+
+/* ─── Icons ──────────────────────────────────────────────────────────────── */
+/* Material Symbols Outlined, inlined by js/app.js. Filled paths on a
+   0 -960 960 960 viewBox, so they take their colour from `fill`, never a
+   stroke. `vertical-align` puts the glyph on the text baseline: these sit
+   inside buttons and badges next to words, and an svg is baseline-aligned at
+   its bottom edge by default, which rides one-fifth of a line too high. */
+.ic { display:inline-block; vertical-align:-.18em; fill:currentColor; flex:none; }
 
 /* ─── Inputs ─────────────────────────────────────────────────────────────── */
 .input, .select, .textarea {
@@ -351,7 +362,8 @@ table.rankTable { width:100%; border-collapse:collapse; min-width:720px; }
 
 /* ─── Empty state / toast ────────────────────────────────────────────────── */
 .emptyState { text-align:center; padding:56px 20px; color:var(--ow-text-dim); }
-.emptyIcon { font-size:2.6rem; opacity:.35; margin-bottom:10px; }
+.emptyIcon { line-height:0; opacity:.35; margin-bottom:10px; }
+.emptyIcon .ic { vertical-align:baseline; }
 .emptyState h3 {
   font-family:var(--ow-font-title); font-size:1.5rem; color:var(--ow-text);
   text-transform:uppercase; letter-spacing:2px; margin:0 0 8px;
@@ -367,7 +379,8 @@ table.rankTable { width:100%; border-collapse:collapse; min-width:720px; }
 .toast.err  { background:var(--ow-red); color:#fff; }
 .toast.info { background:#334155; color:#fff; }
 
-.spin { display:inline-block; animation:spin 1s linear infinite; }
+.spin { display:inline-block; line-height:0; animation:spin 1s linear infinite; }
+.spin .ic { vertical-align:baseline; }
 @keyframes spin { to { transform:rotate(360deg); } }
 @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
 @keyframes slideUp { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:none; } }
