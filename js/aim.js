@@ -97,6 +97,9 @@ function toast(message, kind = 'ok', ms = 2800) {
 }
 
 let modalTrigger = null;
+/* The person editor, while it is open: hero hydration that lands mid-edit
+   must reach the character grid instead of waiting for the next open. */
+let personModalRefresh = null;
 function openModal(html, { wide = false, focus = true } = {}) {
   if (el.modal.hidden) modalTrigger = document.activeElement;
   el.modalContent.className = `modalContent${wide ? ' wide' : ''}`;
@@ -130,6 +133,7 @@ function trapTab(e) {
   else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
 }
 
+el.modal.addEventListener('modalclose', () => { personModalRefresh = null; });
 el.modal.addEventListener('click', (e) => {
   if (e.target === el.modal || e.target.closest('[data-close]')) closeModal();
 });
@@ -1385,6 +1389,7 @@ function openPersonModal(person) {
     try { await owApi.deletePlayer(id); } catch (err) { toast(err.message, 'err', 4200); }
   };
 
+  personModalRefresh = rerender;
   openModal(body(), { wide: true }); // first paint takes focus; later rebuilds don't
   bind();
 }
@@ -1583,6 +1588,7 @@ refreshHeroes()
     const names = added.map((k) => HEROES[k]?.name || k).join(', ');
     toast(`New hero${added.length > 1 ? 'es' : ''}: ${names}`, 'info', 5200);
     render();
+    personModalRefresh?.();
   })
   .catch(() => { /* offline or API napping: the cached roster already loaded */ });
 setInterval(() => { if (!document.hidden) loadData({ silent: true }); }, 90_000);
