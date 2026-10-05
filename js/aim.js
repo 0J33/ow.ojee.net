@@ -235,13 +235,13 @@ function updateRosterSelection() {
 /* ─── Tabs ───────────────────────────────────────────────────────────────── */
 
 function renderTabs() {
-  el.tabNav.setAttribute('role', 'tablist');
-  el.tabNav.innerHTML = TABS.map((t) => `
+  el.tabNav.innerHTML = `<div class="tabList" role="tablist" aria-label="Views">${
+    TABS.map((t) => `
     <button class="tabBtn ${ui.tab === t.key ? 'tabBtnActive' : ''}" data-tab="${t.key}" type="button"
             role="tab" aria-selected="${ui.tab === t.key}"
             id="tab-${t.key}" aria-controls="content">
       ${icon(t.ico, 16)} ${t.label}
-    </button>`).join('');
+    </button>`).join('')}</div>`;
 }
 
 el.tabNav.addEventListener('click', (e) => {

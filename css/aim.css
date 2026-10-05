@@ -58,9 +58,10 @@
 
 /* ─── Tabs ───────────────────────────────────────────────────────────────── */
 .tabNav {
-  display:flex; gap:6px; margin:18px 0 16px; flex-wrap:wrap;
+  margin:18px 0 16px;
   border-bottom:1px solid rgba(249,158,26,.18); padding-bottom:0;
 }
+.tabList { display:flex; gap:6px; flex-wrap:wrap; }
 .tabBtn {
   display:inline-flex; align-items:center; gap:8px;
   padding:9px 16px 7px; margin-bottom:-1px; cursor:pointer;
@@ -465,7 +466,7 @@
 
 /* ─── Mobile ─────────────────────────────────────────────────────────────── */
 @media (max-width:768px) {
-  .tabNav { gap:2px; overflow-x:auto; flex-wrap:nowrap; }
+  .tabList { gap:2px; overflow-x:auto; flex-wrap:nowrap; }
   .tabBtn { padding:9px 11px 7px; font-size:1rem; letter-spacing:1.4px; white-space:nowrap; }
   .drillGrid { grid-template-columns:1fr; }
   .scoreField { width:120px; font-size:1.6rem; }
