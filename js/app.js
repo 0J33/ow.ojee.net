@@ -515,7 +515,7 @@ function tableHTML(accounts) {
   };
 
   return `
-  <div class="panel tableWrap">
+  <div class="panel tableWrap" tabindex="0" role="group" aria-label="Table, scrolls sideways">
     <table class="rankTable">
       <thead><tr>
         <th>Player</th>${ROLES.map((r) => `<th style="color:${r.color}">${r.short}</th>`).join('')}
@@ -609,7 +609,31 @@ function renderGroupTray() {
   }).join('');
 }
 
+/** Where the keyboard was across a content rebuild. */
+function focusSnapshot() {
+  const a = document.activeElement;
+  if (!a || a === document.body || a === document.documentElement) return null;
+  if (a.id) return `#${a.id}`;
+  const act = a.getAttribute?.('data-act');
+  const holder = a.closest?.('[data-id]');
+  if (act && holder) return `[data-id="${holder.dataset.id}"] [data-act="${act}"]`;
+  if (holder) return `[data-id="${holder.dataset.id}"] .cardIdent`;
+  for (const attr of ['platform', 'view', 'sort']) {
+    if (a.dataset?.[attr]) return `[data-${attr}="${a.dataset[attr]}"]`;
+  }
+  return null;
+}
+
 function render() {
+  const snap = focusSnapshot();
+  renderBody();
+  if (snap) {
+    const back = document.querySelector(snap);
+    if (back) back.focus({ preventScroll: true });
+  }
+}
+
+function renderBody() {
   const { view, platform, sort, anchor } = store.getSettings();
 
   document.querySelectorAll('[data-platform]').forEach((b) =>
@@ -810,13 +834,26 @@ function openModal(html, { wide = false, focus = true } = {}) {
 
 function closeModal() {
   if (el.modal.hidden) return;
+  // Resolve where to go back to *before* the close listeners run: openDetail's
+  // listener re-renders the grid and takes the original node with it.
+  const back = focusSnapshotFor(modalTrigger);
   el.modal.dispatchEvent(new Event('modalclose'));
   el.modal.hidden = true;
   el.modalContent.innerHTML = '';
-  // The dialog was opened from a control that the rebuild may have destroyed;
-  // fall back to the page body rather than leaving focus nowhere.
-  if (modalTrigger && document.contains(modalTrigger)) modalTrigger.focus({ preventScroll: true });
+  const target = (back && document.querySelector(back))
+    || (modalTrigger && document.contains(modalTrigger) && modalTrigger);
+  if (target) target.focus({ preventScroll: true });
   modalTrigger = null;
+}
+
+/** Same idea as focusSnapshot, but for an element we still hold a reference to. */
+function focusSnapshotFor(el) {
+  if (!el || el === document.body) return null;
+  if (el.id) return `#${el.id}`;
+  const act = el.getAttribute?.('data-act');
+  const holder = el.closest?.('[data-id]');
+  if (act && holder) return `[data-id="${holder.dataset.id}"] [data-act="${act}"]`;
+  return null;
 }
 
 el.modal.addEventListener('click', (e) => {

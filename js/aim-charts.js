@@ -83,7 +83,7 @@ export function scoreClusterChart(playerScores) {
 
   return `
   <div class="chartWrap">
-    <div class="chartScroll">
+    <div class="chartScroll" tabindex="0" role="group" aria-label="Chart, scrolls sideways">
       <div style="min-width:${w}px">
         <svg class="chart" viewBox="0 0 ${w} ${h}" width="100%" height="${h}" role="img"
              aria-label="Every score entry grouped by drill, one dot each">
@@ -130,7 +130,7 @@ function breakdownChart(rows, { color, title }) {
 
   return `
   <div class="chartWrap">
-    <div class="chartScroll">
+    <div class="chartScroll" tabindex="0" role="group" aria-label="Chart, scrolls sideways">
       <div style="min-width:${w}px">
         <svg class="chart" viewBox="0 0 ${w} ${h}" width="100%" height="${h}" role="img" aria-label="${esc(title)}">
           ${rows.map((r, i) => {
@@ -270,7 +270,7 @@ export function leaderboardDistribution(rankings, players) {
 
   return `
   <div class="chartWrap">
-    <div class="chartScroll">
+    <div class="chartScroll" tabindex="0" role="group" aria-label="Chart, scrolls sideways">
       <div style="min-width:${w}px">
         <svg class="chart" viewBox="0 0 ${w} ${h}" width="100%" height="${h}" role="img"
              aria-label="Best and average score per player">

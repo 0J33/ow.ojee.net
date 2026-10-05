@@ -199,7 +199,7 @@ function renderRoster() {
         <button class="personChipMain" data-person="${esc(p.id)}" type="button"
                 title="Train as ${esc(p.name)} — Enter selects, or double-click to edit">
           <span class="personDot" style="background:${esc(p.color)}"></span>
-          ${p.favoriteHero ? heroImg(p.favoriteHero, 22) : ''}
+          ${p.favoriteHero ? heroImg(p.favoriteHero, 22, '', '') : ''}
           <b style="color:${getReadableColor(p.color)};text-shadow:${getColorShadow(p.color)}">${esc(p.name)}</b>
           ${accts ? `<span class="acctN" title="${accts} account${accts > 1 ? 's' : ''} linked">${accts}</span>` : ''}
         </button>
@@ -359,7 +359,7 @@ function renderEntry() {
             </button>`).join('')}
         </div>` : ''}
       <div class="scoreContext">
-        ${heroImg(hero, 32, 'miniPortrait')}
+        ${heroImg(hero, 32, 'miniPortrait', '')}
         <div>
           <div class="scoreContextName">${esc(HEROES[hero]?.name || hero)}</div>
           <div class="scoreContextDrill">${esc(DRILLS[drill]?.name || drill)}${accts.length > 1 && ui.entry.accountId ? ` · ${esc(displayAccountId(ui.entry.accountId))}` : ''}</div>
@@ -375,7 +375,7 @@ function renderEntry() {
   const recentHTML = recentScores.length ? `
     <div class="panel">
       <h2 class="panelTitle">Recent Entries</h2>
-      <div class="tableWrap">
+      <div class="tableWrap" tabindex="0" role="group" aria-label="Table, scrolls sideways">
         <table class="table">
           <thead><tr><th>Date</th><th>Account</th><th>Drill</th><th>Hero</th><th>Score</th></tr></thead>
           <tbody>
@@ -576,7 +576,7 @@ function renderLeaderboard() {
   const table = `
     <div class="panel">
       <h2 class="panelTitle">Rankings</h2>
-      <div class="tableWrap">
+      <div class="tableWrap" tabindex="0" role="group" aria-label="Table, scrolls sideways">
         <table class="table">
           <thead><tr>
             <th style="width:56px">Rank</th><th>Player</th>
@@ -593,7 +593,7 @@ function renderLeaderboard() {
                   <td>
                     <span class="cellFlex">
                       <span class="playerChipColor" style="background:${esc(p?.color || '#999')}"></span>
-                      ${p?.favoriteHero ? heroImg(p.favoriteHero, 24) : ''}
+                      ${p?.favoriteHero ? heroImg(p.favoriteHero, 24, '', '') : ''}
                       <strong style="color:${getReadableColor(p?.color)};text-shadow:${getColorShadow(p?.color)}">${esc(p?.name || 'Unknown')}</strong>
                       ${p?.mainAccount ? `<span class="cardTag">${esc(displayAccountId(p.mainAccount))}</span>` : ''}
                     </span>
@@ -654,7 +654,7 @@ function renderStats() {
                 data-statplayer="${esc(x.id)}" type="button"
                 style="${ui.stats.playerId === x.id ? `border-color:${esc(x.color)}` : ''}">
           <span class="playerChipColor" style="background:${esc(x.color)}"></span>
-          ${x.favoriteHero ? heroImg(x.favoriteHero, 20, 'playerChipHero') : ''}
+          ${x.favoriteHero ? heroImg(x.favoriteHero, 20, 'playerChipHero', '') : ''}
           ${esc(x.name)}
         </button>`).join('')}
     </div>`;
@@ -710,7 +710,7 @@ function renderStats() {
   const pbTable = `
     <div class="panel">
       <h2 class="panelTitle">Personal Bests</h2>
-      <div class="tableWrap">
+      <div class="tableWrap" tabindex="0" role="group" aria-label="Table, scrolls sideways">
         <table class="table">
           <thead><tr><th>Drill</th><th>Hero</th><th>Best</th></tr></thead>
           <tbody>
@@ -798,7 +798,7 @@ function renderCompare() {
                   data-cmp="${esc(p.id)}" type="button"
                   style="${ids.includes(p.id) ? `border-color:${esc(p.color)}` : ''}">
             <span class="playerChipColor" style="background:${esc(p.color)}"></span>
-            ${p.favoriteHero ? heroImg(p.favoriteHero, 20, 'playerChipHero') : ''}
+            ${p.favoriteHero ? heroImg(p.favoriteHero, 20, 'playerChipHero', '') : ''}
             ${esc(p.name)}
           </button>`).join('')}
       </div>
@@ -846,7 +846,7 @@ function renderCompare() {
   const table = `
     <div class="panel">
       <h2 class="panelTitle">Head to Head</h2>
-      <div class="tableWrap">
+      <div class="tableWrap" tabindex="0" role="group" aria-label="Table, scrolls sideways">
         <table class="table">
           <thead><tr>
             <th>Drill</th><th>Hero</th>
@@ -938,7 +938,7 @@ function renderHistory() {
   return filters + `
     <div class="panel">
       <h2 class="panelTitle">All Entries (${list.length})</h2>
-      <div class="tableWrap">
+      <div class="tableWrap" tabindex="0" role="group" aria-label="Table, scrolls sideways">
         <table class="table">
           <thead><tr><th>Date</th><th>Player</th><th>Account</th><th>Drill</th><th>Hero</th><th>Score</th><th>Actions</th></tr></thead>
           <tbody>
@@ -956,7 +956,7 @@ function renderHistory() {
                   </td>
                   <td>${s.accountId ? esc(displayAccountId(s.accountId)) : '<span style="color:var(--ow-text-mute)">&mdash;</span>'}</td>
                   <td>${esc(DRILLS[s.drill]?.name || s.drill)}</td>
-                  <td><span class="cellFlex">${heroImg(s.hero, 22)}${esc(HEROES[s.hero]?.name || s.hero)}</span></td>
+                  <td><span class="cellFlex">${heroImg(s.hero, 22, '', '')}${esc(HEROES[s.hero]?.name || s.hero)}</span></td>
                   <td>
                     ${editing
                       ? `<input type="number" class="editInput" id="editScore" value="${esc(f.editValue)}" />`
@@ -1489,10 +1489,10 @@ function focusSnapshot() {
   const a = document.activeElement;
   if (!a || a === document.body || a === document.documentElement) return null;
   if (a.id) return { sel: `#${a.id}` };
-  if (a.dataset?.tab) return { sel: `[data-tab="${a.dataset.tab}"]` };
-  if (a.dataset?.person) return { sel: `[data-person="${a.dataset.person}"]` };
-  if (a.dataset?.cmp) return { sel: `[data-cmp="${a.dataset.cmp}"]` };
-  if (a.dataset?.statplayer) return { sel: `[data-statplayer="${a.dataset.statplayer}"]` };
+  for (const attr of ['tab', 'person', 'cmp', 'statplayer', 'drill', 'hero', 'account', 'sort']) {
+    if (a.dataset?.[attr]) return { sel: `[data-${attr}="${a.dataset[attr]}"]` };
+  }
+  if (a.id === 'submitScore' || a.id === 'scoreField') return { sel: `#${a.id}` };
   return null;
 }
 
