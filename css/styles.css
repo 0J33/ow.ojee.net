@@ -67,7 +67,12 @@ body {
 }
 
 ::selection { background:rgba(249,158,26,.32); color:#fff; }
-:focus-visible { outline:2px solid var(--ow-orange); outline-offset:2px; }
+/* Offset INTO the box: these controls are clip-pathed, and an outside
+   outline is simply cut away with the corners. */
+:focus-visible { outline:2px solid var(--ow-orange); outline-offset:-4px; }
+.btnPrimary:focus-visible,
+.submitBtn:focus-visible,
+.siteNavLink[aria-current="page"]:focus-visible { outline-color:#0b0f1c; }
 input, textarea, select, button { caret-color:var(--ow-orange); }
 
 ::-webkit-scrollbar { width:11px; height:11px; }
@@ -289,6 +294,11 @@ a { color:var(--ow-orange); text-underline-offset:3px; }
   background:linear-gradient(90deg,rgba(8,12,24,.95) 0%,rgba(8,12,24,.8) 55%,rgba(8,12,24,.55) 100%);
 }
 .cardBanner > * { position:relative; }
+.cardIdent {
+  display:flex; align-items:center; gap:12px; flex:1; min-width:0;
+  padding:0; margin:0; border:none; background:none; color:inherit;
+  font:inherit; text-align:left; cursor:pointer;
+}
 .cardBanner:hover { background-color:rgba(249,158,26,.06); }
 
 .avatar {
@@ -352,7 +362,7 @@ a { color:var(--ow-orange); text-underline-offset:3px; }
 .rankIcon { height:34px; width:auto; }
 .tierIcon { height:17px; width:auto; margin-top:-2px; }
 .rankText { font-family:var(--ow-font-title); font-size:.98rem; letter-spacing:1px; line-height:1; font-variant-numeric:tabular-nums; }
-.rankNone { color:#5A6A80; font-family:var(--ow-font-title); font-size:.92rem; letter-spacing:1px; }
+.rankNone { color:#7C8DA6; font-family:var(--ow-font-title); font-size:.92rem; letter-spacing:1px; }
 
 /* Compatibility chip shown on every non-anchor card while comparing */
 .cmpChip {
@@ -490,7 +500,7 @@ table.rankTable { width:100%; border-collapse:collapse; min-width:720px; }
 .emptyState p { max-width:62ch; margin:0 auto 10px; line-height:1.6; }
 .emptyIcon { line-height:0; opacity:.4; margin-bottom:12px; color:var(--ow-orange); }
 .emptyIcon .ic { vertical-align:baseline; }
-.emptyState h3 {
+.emptyState h2 {
   font-family:var(--ow-font-title); font-size:1.6rem; color:var(--ow-text);
   text-transform:uppercase; letter-spacing:2.5px; margin:0 0 8px;
 }

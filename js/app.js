@@ -35,6 +35,20 @@ const AVATAR_FALLBACK = 'data:image/svg+xml;utf8,' + encodeURIComponent(
   '<path d="M9 46c0-8.6 6.7-13.5 15-13.5S39 37.4 39 46z" fill="#26344b"/></svg>'
 );
 
+/* Keep Tab inside an open dialog — aria-modal promises it, so keep it. */
+function trapTab(e) {
+  const nodes = [...el.modalContent.querySelectorAll(
+    'a[href],button,input,select,textarea,[tabindex]:not([tabindex="-1"])')]
+    .filter((n) => !n.disabled && n.offsetParent !== null);
+  if (!nodes.length) return;
+  const first = nodes[0];
+  const last = nodes[nodes.length - 1];
+  const inside = el.modalContent.contains(document.activeElement);
+  if (!inside) { e.preventDefault(); (e.shiftKey ? last : first).focus(); return; }
+  if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+  else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+}
+
 const busy = new Set();          // ids currently being fetched
 // Same-name accounts from a failed tag lookup, kept until the add flow can
 // put them in front of the user.
@@ -432,9 +446,10 @@ function cardHTML(account) {
   return `
   <article class="card ${isAnchorCard ? 'isAnchor' : ''} ${inGroup ? 'isGrouped' : ''} ${store.isStale(account.id, 60) ? 'isStale' : ''}"
            data-id="${esc(account.id)}">
-    <div class="cardBanner" data-act="anchor" role="button" tabindex="0"
-         title="Compare everyone against this player"
+    <div class="cardBanner"
          ${data?.namecard ? `style="background-image:url('${esc(data.namecard)}')"` : ''}>
+      <button class="cardIdent" type="button" data-act="anchor"
+              title="Compare everyone against this player">
       <img class="avatar" src="${esc(data?.avatar || AVATAR_FALLBACK)}" alt="" loading="lazy"
            onerror="this.src='${AVATAR_FALLBACK}'" />
       <div class="cardIdentity">
@@ -447,6 +462,7 @@ function cardHTML(account) {
         </div>
         ${data?.title ? `<div class="cardTitle">${esc(data.title)}</div>` : ''}
       </div>
+      </button>
       <div class="cardTools">
         <button class="iconBtn" data-act="group" title="${inGroup ? 'Remove from group' : 'Add to group'}">${icon(inGroup ? 'dotOn' : 'dotOff')}</button>
         <button class="iconBtn" data-act="detail" title="Full profile and rank history">${icon('info')}</button>
@@ -612,7 +628,7 @@ function render() {
     el.content.innerHTML = `
       <div class="panel emptyState">
         <div class="emptyIcon">${icon('target', 44)}</div>
-        <h3>No accounts tracked yet</h3>
+        <h2>No accounts tracked yet</h2>
         <p>Add a BattleTag above &mdash; <b>Name#1234</b> looks the account up directly.<br />
            A bare name searches instead, and you pick from the matches.</p>
         <p class="helpText">Their career profile has to be set to <b>public</b> in
@@ -783,11 +799,13 @@ function openDataModal() {
 
 /* ─── Modal plumbing ──────────────────────────────────────────────────────── */
 
-function openModal(html, { wide = false } = {}) {
+let modalTrigger = null;
+function openModal(html, { wide = false, focus = true } = {}) {
+  if (el.modal.hidden) modalTrigger = document.activeElement;
   el.modalContent.className = `modalContent${wide ? ' wide' : ''}`;
   el.modalContent.innerHTML = html;
   el.modal.hidden = false;
-  el.modalContent.querySelector('input,button,textarea')?.focus();
+  if (focus) el.modalContent.querySelector('input,button,textarea')?.focus();
 }
 
 function closeModal() {
@@ -795,6 +813,10 @@ function closeModal() {
   el.modal.dispatchEvent(new Event('modalclose'));
   el.modal.hidden = true;
   el.modalContent.innerHTML = '';
+  // The dialog was opened from a control that the rebuild may have destroyed;
+  // fall back to the page body rather than leaving focus nowhere.
+  if (modalTrigger && document.contains(modalTrigger)) modalTrigger.focus({ preventScroll: true });
+  modalTrigger = null;
 }
 
 el.modal.addEventListener('click', (e) => {
@@ -802,6 +824,7 @@ el.modal.addEventListener('click', (e) => {
 });
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') closeModal();
+  if (e.key === 'Tab' && !el.modal.hidden) trapTab(e);
   if (e.key === '/' && document.activeElement !== el.addInput && el.modal.hidden) {
     e.preventDefault(); el.addInput.focus();
   }
@@ -839,14 +862,6 @@ el.content.addEventListener('click', (e) => {
     store.setSetting('anchor', current === id ? null : id);
     render();
   }
-});
-
-el.content.addEventListener('keydown', (e) => {
-  if (e.key !== 'Enter' && e.key !== ' ') return;
-  const banner = e.target.closest('.cardBanner');
-  if (!banner) return;
-  e.preventDefault();
-  banner.click();
 });
 
 el.groupTray.addEventListener('click', (e) => {

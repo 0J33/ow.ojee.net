@@ -35,7 +35,7 @@
 <div class="container">
 
   <!-- ─── Site bar: the two trackers, one home ─────────────────────────── -->
-  <header class="siteBar">
+  <div class="siteBar">
     <a class="siteMark" href="./" aria-label="ow.ojee.net home">
       <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">
         <defs>
@@ -63,7 +63,7 @@
     <div class="siteBarRight">
       <a class="siteBack" href="https://ojee.net/">&#8592; ojee.net</a>
     </div>
-  </header>
+  </div>
 
   <header class="header">
     <h1 class="headerTitle">Rank Tracker</h1>
@@ -71,7 +71,7 @@
   </header>
 
   <!-- ─── Toolbar ─────────────────────────────────────────────────────── -->
-  <section class="panel">
+  <section class="panel" aria-label="Tracker controls">
     <div class="toolbar">
       <form class="addForm" id="addForm" autocomplete="off">
         <input class="input" id="addInput" type="text" spellcheck="false"
@@ -104,9 +104,9 @@
     </div>
   </section>
 
-  <div class="statusBar" id="statusBar"></div>
+  <div class="statusBar" id="statusBar" aria-live="polite"></div>
 
-  <main id="content" aria-live="polite"></main>
+  <main id="content"></main>
 
   <footer class="footer">
     <p>
@@ -151,7 +151,7 @@
   <div class="modalContent" id="modalContent" role="dialog" aria-modal="true"></div>
 </div>
 
-<div class="toastWrap" id="toasts"></div>
+<div class="toastWrap" id="toasts" aria-live="polite" role="status"></div>
 
 <script type="module" src="js/app.js"></script>
 </body>

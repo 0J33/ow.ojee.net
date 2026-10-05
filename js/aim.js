@@ -95,7 +95,9 @@ function toast(message, kind = 'ok', ms = 2800) {
   }, ms);
 }
 
+let modalTrigger = null;
 function openModal(html, { wide = false, focus = true } = {}) {
+  if (el.modal.hidden) modalTrigger = document.activeElement;
   el.modalContent.className = `modalContent${wide ? ' wide' : ''}`;
   el.modalContent.innerHTML = html;
   el.modal.hidden = false;
@@ -107,12 +109,33 @@ function closeModal() {
   el.modal.dispatchEvent(new Event('modalclose'));
   el.modal.hidden = true;
   el.modalContent.innerHTML = '';
+  if (modalTrigger && document.contains(modalTrigger)) {
+    modalTrigger.focus({ preventScroll: true });
+  }
+  modalTrigger = null;
+}
+
+/* Keep Tab inside an open dialog — aria-modal promises it, so keep it. */
+function trapTab(e) {
+  const nodes = [...el.modalContent.querySelectorAll(
+    'a[href],button,input,select,textarea,[tabindex]:not([tabindex="-1"])')]
+    .filter((n) => !n.disabled && n.offsetParent !== null);
+  if (!nodes.length) return;
+  const first = nodes[0];
+  const last = nodes[nodes.length - 1];
+  const inside = el.modalContent.contains(document.activeElement);
+  if (!inside) { e.preventDefault(); (e.shiftKey ? last : first).focus(); return; }
+  if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+  else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
 }
 
 el.modal.addEventListener('click', (e) => {
   if (e.target === el.modal || e.target.closest('[data-close]')) closeModal();
 });
-document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeModal();
+  if (e.key === 'Tab' && !el.modal.hidden) trapTab(e);
+});
 
 /* ─── Medals (drawn, never emoji) ────────────────────────────────────────── */
 
@@ -139,10 +162,13 @@ function medal(rank) {
 
 /* ─── Small shared views ─────────────────────────────────────────────────── */
 
-const heroImg = (heroKey, size, cls = '') => {
+/* alt defaults to the hero's name; pass '' where the name already sits
+   beside the image, so screen readers don't hear it twice. */
+const heroImg = (heroKey, size, cls = '', alt = undefined) => {
   const hero = HEROES[heroKey];
   if (!hero) return '';
-  return `<img src="${hero.portrait}" alt="${esc(hero.name)}" width="${size}" height="${size}"
+  const text = alt === undefined ? hero.name : alt;
+  return `<img src="${hero.portrait}" alt="${esc(text)}" width="${size}" height="${size}"
     class="${cls}" loading="lazy" style="width:${size}px;height:${size}px;border-radius:50%;object-fit:cover"
     onerror="this.style.visibility='hidden'" />`;
 };
@@ -150,7 +176,7 @@ const heroImg = (heroKey, size, cls = '') => {
 const emptyState = (ico, title, lines) => `
   <div class="panel emptyState">
     <div class="emptyIcon">${icon(ico, 44)}</div>
-    <h3>${esc(title)}</h3>
+    <h2>${esc(title)}</h2>
     ${lines.map((l) => `<p>${l}</p>`).join('')}
   </div>`;
 
@@ -161,17 +187,21 @@ function renderRoster() {
 
   el.rosterRow.innerHTML = players.map((p) => {
     const accts = accountsOf(p).length;
+    const on = ui.activePlayerId === p.id;
     return `
-      <button class="personChip ${ui.activePlayerId === p.id ? 'personChipActive' : ''}"
-              data-person="${esc(p.id)}" type="button"
-              title="Click to train as ${esc(p.name)} — double-click to edit"
-              style="${ui.activePlayerId === p.id ? `border-color:${esc(p.color)}` : ''}">
-        <span class="personDot" style="background:${esc(p.color)};color:${esc(p.color)}"></span>
-        ${p.favoriteHero ? heroImg(p.favoriteHero, 22) : ''}
-        <b style="color:${getReadableColor(p.color)};text-shadow:${getColorShadow(p.color)}">${esc(p.name)}</b>
-        ${accts ? `<span class="acctN" title="${accts} account${accts > 1 ? 's' : ''} linked">${accts}</span>` : ''}
-        <span class="editIcon" data-edit="${esc(p.id)}" title="Edit accounts and characters">${icon('edit', 15)}</span>
-      </button>`;
+      <div class="personChip ${on ? 'personChipActive' : ''}"
+           style="${on ? `border-color:${esc(p.color)}` : ''}">
+        <button class="personChipMain" data-person="${esc(p.id)}" type="button"
+                title="Train as ${esc(p.name)} — Enter selects, or double-click to edit">
+          <span class="personDot" style="background:${esc(p.color)}"></span>
+          ${p.favoriteHero ? heroImg(p.favoriteHero, 22) : ''}
+          <b style="color:${getReadableColor(p.color)};text-shadow:${getColorShadow(p.color)}">${esc(p.name)}</b>
+          ${accts ? `<span class="acctN" title="${accts} account${accts > 1 ? 's' : ''} linked">${accts}</span>` : ''}
+        </button>
+        <button class="editIcon" data-edit="${esc(p.id)}" type="button"
+                aria-label="Edit ${esc(p.name)}: accounts and characters"
+                title="Edit accounts and characters">${icon('edit', 15)}</button>
+      </div>`;
   }).join('') + `
     <button class="addPersonBtn" id="addPersonBtn" type="button">${icon('personAdd', 15)} Add person</button>`;
 
@@ -205,8 +235,11 @@ function updateRosterSelection() {
 /* ─── Tabs ───────────────────────────────────────────────────────────────── */
 
 function renderTabs() {
+  el.tabNav.setAttribute('role', 'tablist');
   el.tabNav.innerHTML = TABS.map((t) => `
-    <button class="tabBtn ${ui.tab === t.key ? 'tabBtnActive' : ''}" data-tab="${t.key}" type="button">
+    <button class="tabBtn ${ui.tab === t.key ? 'tabBtnActive' : ''}" data-tab="${t.key}" type="button"
+            role="tab" aria-selected="${ui.tab === t.key}"
+            id="tab-${t.key}" aria-controls="content">
       ${icon(t.ico, 16)} ${t.label}
     </button>`).join('');
 }
@@ -216,7 +249,6 @@ el.tabNav.addEventListener('click', (e) => {
   if (!btn) return;
   ui.tab = btn.dataset.tab;
   savePrefs();
-  renderTabs();
   render();
 });
 
@@ -337,7 +369,7 @@ function renderEntry() {
 
   const recentHTML = recentScores.length ? `
     <div class="panel">
-      <h3 class="panelTitle">Recent Entries</h3>
+      <h2 class="panelTitle">Recent Entries</h2>
       <div class="tableWrap">
         <table class="table">
           <thead><tr><th>Date</th><th>Account</th><th>Drill</th><th>Hero</th><th>Score</th></tr></thead>
@@ -347,7 +379,7 @@ function renderEntry() {
                 <td>${formatDateTime(s.date)}</td>
                 <td>${s.accountId ? esc(displayAccountId(s.accountId)) : '<span style="color:var(--ow-text-mute)">&mdash;</span>'}</td>
                 <td>${esc(DRILLS[s.drill]?.name || s.drill)}</td>
-                <td><span class="cellFlex">${heroImg(s.hero, 22)}${esc(HEROES[s.hero]?.name || s.hero)}</span></td>
+                <td><span class="cellFlex">${heroImg(s.hero, 22, '', '')}${esc(HEROES[s.hero]?.name || s.hero)}</span></td>
                 <td style="font-family:var(--ow-font-title);font-size:1.15rem">${s.score}</td>
               </tr>`).join('')}
           </tbody>
@@ -500,12 +532,12 @@ function renderLeaderboard() {
     <div class="panel">
       <div class="filterRow">
         <span class="filterLabel">Drill:</span>
-        <select class="filterSelect" id="lbDrill">
+        <select class="filterSelect" id="lbDrill" aria-label="Drill filter">
           <option value="all">All Drills</option>
           ${Object.entries(DRILLS).map(([k, d]) => `<option value="${k}" ${drill === k ? 'selected' : ''}>${esc(d.name)}</option>`).join('')}
         </select>
         <span class="filterLabel">Hero:</span>
-        <select class="filterSelect" id="lbHero">
+        <select class="filterSelect" id="lbHero" aria-label="Hero filter">
           <option value="all">All Heroes</option>
           ${options.map((hk) => `<option value="${hk}" ${hero === hk ? 'selected' : ''}>${esc(HEROES[hk]?.name || hk)}</option>`).join('')}
         </select>
@@ -538,7 +570,7 @@ function renderLeaderboard() {
   const total = rankings.length;
   const table = `
     <div class="panel">
-      <h3 class="panelTitle">Rankings</h3>
+      <h2 class="panelTitle">Rankings</h2>
       <div class="tableWrap">
         <table class="table">
           <thead><tr>
@@ -574,7 +606,7 @@ function renderLeaderboard() {
     </div>`;
 
   return filters + podiumHTML
-    + `<div class="panel"><h3 class="panelTitle">Score Distribution</h3>
+    + `<div class="panel"><h2 class="panelTitle">Score Distribution</h2>
          ${leaderboardDistribution(byBest, data.players)}</div>`
     + table;
 }
@@ -586,8 +618,15 @@ function bindLeaderboard() {
     render();
   });
   $('#lbHero')?.addEventListener('change', (e) => { ui.lb.hero = e.target.value; render(); });
-  el.content.querySelectorAll('[data-sort]').forEach((n) =>
-    n.addEventListener('click', () => { ui.lb.sort = n.dataset.sort; render(); }));
+  el.content.querySelectorAll('[data-sort]').forEach((n) => {
+    const pick = () => { ui.lb.sort = n.dataset.sort; render(); };
+    n.setAttribute('tabindex', '0');
+    n.setAttribute('aria-label', `Sort by ${n.dataset.sort}`);
+    n.addEventListener('click', pick);
+    n.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); }
+    });
+  });
 }
 
 /* ─── STATS ──────────────────────────────────────────────────────────────── */
@@ -665,7 +704,7 @@ function renderStats() {
   );
   const pbTable = `
     <div class="panel">
-      <h3 class="panelTitle">Personal Bests</h3>
+      <h2 class="panelTitle">Personal Bests</h2>
       <div class="tableWrap">
         <table class="table">
           <thead><tr><th>Drill</th><th>Hero</th><th>Best</th></tr></thead>
@@ -674,7 +713,7 @@ function renderStats() {
               <tr>
                 ${i === 0 || pbRows[i - 1].drillKey !== r.drillKey
                   ? `<td rowspan="${pbRows.filter((x) => x.drillKey === r.drillKey).length}" style="font-weight:700;vertical-align:top">${esc(r.drillName)}</td>` : ''}
-                <td><span class="cellFlex">${heroImg(r.hero, 26)}${esc(HEROES[r.hero]?.name || r.hero)}${mine.has(r.hero) ? ` <span class="kindTag main">YOURS</span>` : ''}</span></td>
+                <td><span class="cellFlex">${heroImg(r.hero, 26, '', '')}${esc(HEROES[r.hero]?.name || r.hero)}${mine.has(r.hero) ? ` <span class="kindTag main">YOURS</span>` : ''}</span></td>
                 <td class="scoreGreen">${r.score}</td>
               </tr>`).join('')}
           </tbody>
@@ -701,10 +740,10 @@ function renderStats() {
   })).sort((a, b) => b.best - a.best);
 
   return picker + strip
-    + `<div class="panel"><h3 class="panelTitle">All Scores</h3>${scoreClusterChart(scores)}</div>`
+    + `<div class="panel"><h2 class="panelTitle">All Scores</h2>${scoreClusterChart(scores)}</div>`
     + pbTable
-    + `<div class="panel"><h3 class="panelTitle">By Drill</h3>${drillBreakdownChart(drillRows)}</div>`
-    + `<div class="panel"><h3 class="panelTitle">By Hero</h3>${heroBreakdownChart(heroRows)}</div>`;
+    + `<div class="panel"><h2 class="panelTitle">By Drill</h2>${drillBreakdownChart(drillRows)}</div>`
+    + `<div class="panel"><h2 class="panelTitle">By Hero</h2>${heroBreakdownChart(heroRows)}</div>`;
 }
 
 function bindStats() {
@@ -761,7 +800,7 @@ function renderCompare() {
       ${ids.length >= 2 ? `
         <div class="filterRow">
           <span class="filterLabel">Drill:</span>
-          <select class="filterSelect" id="cmpDrill">
+          <select class="filterSelect" id="cmpDrill" aria-label="Drill filter">
             <option value="all">All Drills</option>
             ${Object.entries(DRILLS).map(([k, d]) => `<option value="${k}" ${ui.compare.drill === k ? 'selected' : ''}>${esc(d.name)}</option>`).join('')}
           </select>
@@ -801,7 +840,7 @@ function renderCompare() {
 
   const table = `
     <div class="panel">
-      <h3 class="panelTitle">Head to Head</h3>
+      <h2 class="panelTitle">Head to Head</h2>
       <div class="tableWrap">
         <table class="table">
           <thead><tr>
@@ -818,7 +857,7 @@ function renderCompare() {
               return `
                 <tr>
                   <td>${esc(DRILLS[row.drill]?.name || row.drill)}</td>
-                  <td><span class="cellFlex">${heroImg(row.hero, 22)}${esc(HEROES[row.hero]?.name || row.hero)}</span></td>
+                  <td><span class="cellFlex">${heroImg(row.hero, 22, '', '')}${esc(HEROES[row.hero]?.name || row.hero)}</span></td>
                   ${ids.map((id) => {
                     const v = row.players[id];
                     if (v === undefined) return `<td style="color:var(--ow-text-mute)">&mdash;</td>`;
@@ -835,7 +874,7 @@ function renderCompare() {
     </div>`;
 
   return picker + wins
-    + `<div class="panel"><h3 class="panelTitle">Skill Profile</h3>
+    + `<div class="panel"><h2 class="panelTitle">Skill Profile</h2>
          ${compareRadarChart(rows, ids, data.players)}</div>`
     + table;
 }
@@ -868,17 +907,17 @@ function renderHistory() {
     <div class="panel">
       <div class="filterRow">
         <span class="filterLabel">Player:</span>
-        <select class="filterSelect" id="hPlayer">
+        <select class="filterSelect" id="hPlayer" aria-label="Player filter">
           <option value="all">All Players</option>
           ${data.players.map((p) => `<option value="${esc(p.id)}" ${f.player === p.id ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}
         </select>
         <span class="filterLabel">Drill:</span>
-        <select class="filterSelect" id="hDrill">
+        <select class="filterSelect" id="hDrill" aria-label="Drill filter">
           <option value="all">All Drills</option>
           ${Object.entries(DRILLS).map(([k, d]) => `<option value="${k}" ${f.drill === k ? 'selected' : ''}>${esc(d.name)}</option>`).join('')}
         </select>
         <span class="filterLabel">Hero:</span>
-        <select class="filterSelect" id="hHero">
+        <select class="filterSelect" id="hHero" aria-label="Hero filter">
           <option value="all">All Heroes</option>
           ${usedHeroes.map((hk) => `<option value="${hk}" ${f.hero === hk ? 'selected' : ''}>${esc(HEROES[hk]?.name || hk)}</option>`).join('')}
         </select>
@@ -893,7 +932,7 @@ function renderHistory() {
 
   return filters + `
     <div class="panel">
-      <h3 class="panelTitle">All Entries (${list.length})</h3>
+      <h2 class="panelTitle">All Entries (${list.length})</h2>
       <div class="tableWrap">
         <table class="table">
           <thead><tr><th>Date</th><th>Player</th><th>Account</th><th>Drill</th><th>Hero</th><th>Score</th><th>Actions</th></tr></thead>
@@ -1063,7 +1102,8 @@ function openPersonModal(person) {
           <label class="fieldLabel">Colour</label>
           <div class="colorPickerRow">
             <span class="colorPreview" style="background:${esc(hexOf(rgb.r, rgb.g, rgb.b))}"></span>
-            <input class="hexInput" id="pHex" value="${esc(hexInput)}" maxlength="7" placeholder="#F06414" />
+            <input class="hexInput" id="pHex" value="${esc(hexInput)}" maxlength="7" placeholder="#F06414"
+                   aria-label="Colour hex code" />
             <div class="presetRow" style="margin:0;flex:1">
               ${PRESET_COLORS.slice(0, 12).map((c) => `
                 <button class="swatch ${draft.color.toUpperCase() === c ? 'swatchActive' : ''}"
@@ -1072,9 +1112,11 @@ function openPersonModal(person) {
           </div>
           ${[['r', 'R', '#EF4444'], ['g', 'G', '#22C55E'], ['b', 'B', '#3B82F6']].map(([ch, label, accent]) => `
             <div class="sliderRow">
-              <span class="sliderLabel" style="color:${accent}">${label}</span>
-              <input type="range" class="slider" min="0" max="255" value="${rgb[ch]}" data-chan="${ch}" />
-              <input type="number" class="sliderValue" min="0" max="255" value="${rgb[ch]}" data-chanum="${ch}" />
+              <span class="sliderLabel" style="color:${accent}" aria-hidden="true">${label}</span>
+              <input type="range" class="slider" min="0" max="255" value="${rgb[ch]}" data-chan="${ch}"
+                     aria-label="${label} channel" />
+              <input type="number" class="sliderValue" min="0" max="255" value="${rgb[ch]}" data-chanum="${ch}"
+                     aria-label="${label} channel value" />
             </div>`).join('')}
         </div>
       </div>
@@ -1342,7 +1384,8 @@ function openPersonModal(person) {
     try { await owApi.deletePlayer(id); } catch (err) { toast(err.message, 'err', 4200); }
   };
 
-  rerender();
+  openModal(body(), { wide: true }); // first paint takes focus; later rebuilds don't
+  bind();
 }
 
 /* ─── Import / Export ────────────────────────────────────────────────────── */
@@ -1368,7 +1411,8 @@ function openImportModal(file) {
   openModal(`
     <h2 class="modalTitle">Import Data</h2>
     <p class="helpText">This replaces <b>everything</b> on the server — every person,
-      account, character and score. Password required.</p>
+      account, character and score. The password is the group's: whoever set up the
+      tracker holds it, and a backup file is only usable with it.</p>
     <div class="formGroup">
       <label class="fieldLabel" for="impPw">Password</label>
       <input class="input" id="impPw" type="password" placeholder="Enter password..." />
@@ -1434,17 +1478,37 @@ async function persist(send, okMessage) {
 
 /* ─── Render ─────────────────────────────────────────────────────────────── */
 
+/** Where the keyboard was, so a re-render can put it back. */
+function focusSnapshot() {
+  const a = document.activeElement;
+  if (!a || a === document.body || a === document.documentElement) return null;
+  if (a.id) return { sel: `#${a.id}` };
+  if (a.dataset?.tab) return { sel: `[data-tab="${a.dataset.tab}"]` };
+  if (a.dataset?.person) return { sel: `[data-person="${a.dataset.person}"]` };
+  if (a.dataset?.cmp) return { sel: `[data-cmp="${a.dataset.cmp}"]` };
+  if (a.dataset?.statplayer) return { sel: `[data-statplayer="${a.dataset.statplayer}"]` };
+  return null;
+}
+
+function restoreFocus(snap) {
+  if (!snap) return;
+  const back = document.querySelector(snap.sel);
+  if (back) back.focus({ preventScroll: true });
+}
+
 function render() {
   if (ui.loading) {
     el.content.innerHTML = `<div class="panel emptyState">
       <div class="emptyIcon"><span class="spin">${icon('refresh', 40)}</span></div>
-      <h3>Loading the range…</h3></div>`;
+      <h2>Loading the range…</h2></div>`;
     return;
   }
 
+  const snap = focusSnapshot();
   renderRoster();
   renderTabs();
   renderContent();
+  restoreFocus(snap);
 }
 
 function renderContent() {

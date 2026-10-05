@@ -13,10 +13,10 @@
     <meta property="og:title" content="ow · aim tracker" />
     <meta property="og:description" content="Overwatch practice-range aim scores: drills, heroes, leaderboards and stats for you and your friends." />
     <meta property="og:url" content="https://ow.ojee.net/aim.html" />
-    <meta property="og:image" content="https://ow.ojee.net/res/og.png" />
+    <meta property="og:image" content="https://ow.ojee.net/res/og-aim.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta name="twitter:image" content="https://ow.ojee.net/res/og.png" />
+    <meta name="twitter:image" content="https://ow.ojee.net/res/og-aim.png" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="ow · aim tracker" />
     <meta name="twitter:description" content="Overwatch practice-range aim scores: drills, heroes, leaderboards and stats for you and your friends." />
@@ -34,7 +34,7 @@
 <div class="container">
 
   <!-- ─── Site bar: the two trackers, one home ─────────────────────────── -->
-  <header class="siteBar">
+  <div class="siteBar">
     <a class="siteMark" href="./" aria-label="ow.ojee.net home">
       <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">
         <defs>
@@ -62,7 +62,7 @@
     <div class="siteBarRight">
       <a class="siteBack" href="https://ojee.net/">&#8592; ojee.net</a>
     </div>
-  </header>
+  </div>
 
   <header class="header">
     <h1 class="headerTitle">Aim Tracker</h1>
@@ -81,7 +81,7 @@
   </header>
 
   <!-- ─── Roster: people, their accounts, their characters ─────────────── -->
-  <section class="panel rosterPanel">
+  <section class="panel rosterPanel" aria-label="Roster">
     <div class="rosterHead">
       <span class="fieldLabel">Roster</span>
       <span class="rosterHint" id="rosterHint"></span>
@@ -92,7 +92,7 @@
   <!-- ─── Tabs ─────────────────────────────────────────────────────────── -->
   <nav class="tabNav" id="tabNav" aria-label="Views"></nav>
 
-  <main id="content" aria-live="polite"></main>
+  <main id="content"></main>
 
   <footer class="footer">
     <p>
@@ -121,7 +121,7 @@
   <div class="modalContent" id="modalContent" role="dialog" aria-modal="true"></div>
 </div>
 
-<div class="toastWrap" id="toasts"></div>
+<div class="toastWrap" id="toasts" aria-live="polite" role="status"></div>
 
 <script type="module" src="js/aim.js"></script>
 </body>

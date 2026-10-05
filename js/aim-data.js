@@ -128,18 +128,34 @@ export const getHeroesByRole = () => {
   return grouped;
 };
 
+/* WCAG relative luminance — the naive 0.299/0.587/0.114 average reads far
+   kinder than the contrast formula does, so it let mid-dark player colours
+   through at ~2.7:1. Threshold 0.24 clears 4.5:1 on every panel here. */
+const relLum = (r, g, b) => {
+  const f = (c) => {
+    const v = c / 255;
+    return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+  };
+  return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
+};
+
 /** A readable text color for a player color on dark backgrounds. */
 export const getReadableColor = (hex) => {
-  if (!hex) return '#E6ECF5';
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  if (lum < 0.25) {
-    const lift = 140;
-    return `rgb(${Math.min(r + lift, 255)}, ${Math.min(g + lift, 255)}, ${Math.min(b + lift, 255)})`;
+  if (!hex || !/^#[0-9A-Fa-f]{6}$/.test(hex)) return '#E6ECF5';
+  let r = parseInt(hex.slice(1, 3), 16);
+  let g = parseInt(hex.slice(3, 5), 16);
+  let b = parseInt(hex.slice(5, 7), 16);
+  if (relLum(r, g, b) >= 0.24) return hex;
+  // Mix toward white (keeps the hue) until the text clears the bar.
+  for (let t = 0.05; t <= 1; t += 0.05) {
+    const mr = Math.round(r + (255 - r) * t);
+    const mg = Math.round(g + (255 - g) * t);
+    const mb = Math.round(b + (255 - b) * t);
+    if (relLum(mr, mg, mb) >= 0.24) {
+      return '#' + [mr, mg, mb].map((v) => v.toString(16).padStart(2, '0')).join('').toUpperCase();
+    }
   }
-  return hex;
+  return '#FFFFFF';
 };
 
 export const getColorShadow = (hex) => {

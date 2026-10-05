@@ -15,14 +15,19 @@
 .rosterRow { display:flex; flex-wrap:wrap; gap:9px; align-items:center; }
 
 .personChip {
-  display:flex; align-items:center; gap:9px;
-  padding:7px 14px 6px; cursor:pointer;
+  display:flex; align-items:center; gap:2px;
+  padding:3px 6px 3px 0;
   background:rgba(255,255,255,.045); border:1px solid rgba(255,255,255,.09);
   clip-path:var(--bevel-sm);
   transition:border-color .16s, background .16s, transform .16s;
   color:var(--ow-text); font-family:var(--ow-font-body); font-size:.98rem;
 }
 .personChip:hover { background:rgba(255,255,255,.08); border-color:rgba(249,158,26,.4); transform:translateY(-1px); }
+.personChipMain {
+  display:flex; align-items:center; gap:9px; flex:1; min-width:0;
+  padding:4px 4px 3px 9px; background:none; border:none; color:inherit;
+  font:inherit; text-align:left; cursor:pointer;
+}
 .personChipActive {
   border-color:var(--ow-orange); background:rgba(249,158,26,.14);
   box-shadow:inset 0 0 0 1px rgba(249,158,26,.35);
@@ -35,8 +40,11 @@
   color:var(--ow-text-mute); background:rgba(255,255,255,.07);
   padding:0 6px; clip-path:var(--bevel-sm);
 }
-.personChip .editIcon { opacity:0; color:var(--ow-text-mute); transition:opacity .16s; line-height:0; }
-.personChip:hover .editIcon { opacity:1; }
+.editIcon {
+  opacity:.55; color:var(--ow-text-mute); transition:opacity .16s;
+  line-height:0; background:none; border:none; cursor:pointer; padding:5px;
+}
+.personChip:hover .editIcon, .editIcon:focus-visible { opacity:1; color:var(--ow-orange); }
 
 .addPersonBtn {
   display:inline-flex; align-items:center; gap:7px;
