@@ -1,8 +1,7 @@
 # DESIGN.md — ow.ojee.net
 
 The durable record of the surface this repo ships: one Overwatch-flavoured
-Operate world shared by the rank tracker (`index.html`) and the aim tracker
-(`aim.html`). Written from the built code after the 2026-10 overhaul, not
+Operate world shared by the rank tracker (`/rank/`) and the aim tracker (`/aim/`). Written from the built code after the 2026-10 overhaul, not
 from intention.
 
 ## The world
