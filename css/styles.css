@@ -115,7 +115,7 @@ a { color:var(--ow-orange); text-underline-offset:3px; }
 .siteNavLink:hover { color:var(--ow-text); background:rgba(255,255,255,.05); }
 .siteNavLink[aria-current="page"] {
   color:#0b0f1c; background:linear-gradient(135deg,var(--ow-orange-hot),var(--ow-orange));
-  box-shadow:0 6px 18px -10px rgba(249,158,26,.8);
+  box-shadow:0 6px 18px -10px rgba(0,0,0,.65);
 }
 .siteNavLink[aria-current="page"] .ic { opacity:.85; }
 
@@ -189,7 +189,7 @@ a { color:var(--ow-orange); text-underline-offset:3px; }
 .btnPrimary {
   background:linear-gradient(135deg,var(--ow-orange-hot),var(--ow-orange));
   border-color:transparent; color:#140b02; font-weight:700;
-  box-shadow:0 8px 22px -12px rgba(249,158,26,.9);
+  box-shadow:0 8px 22px -12px rgba(0,0,0,.7);
 }
 .btnPrimary:hover:not(:disabled) { filter:brightness(1.08); background:linear-gradient(135deg,var(--ow-orange-hot),var(--ow-orange)); color:#140b02; }
 

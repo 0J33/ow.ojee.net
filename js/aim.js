@@ -278,7 +278,7 @@ function renderEntry() {
                 </div>
                 <div class="drillCardHeroes">${d.heroes.map((h) => heroImg(h, 24, 'drillHeroThumb')).join('')}</div>
                 <div class="drillCardBottom"><div class="drillProgressBar">
-                  <div class="drillProgressFill" style="width:${c.total ? (c.done / c.total) * 100 : 0}%"></div>
+                  <div class="drillProgressFill" style="transform:scaleX(${c.total ? (c.done / c.total) : 0})"></div>
                 </div></div>
               </div>`;
           }).join('')}
