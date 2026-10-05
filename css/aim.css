@@ -95,6 +95,7 @@
 
 .drillCard {
   position:relative; padding:11px 13px 12px; cursor:pointer;
+  display:flex; flex-direction:column;
   background:rgba(255,255,255,.035); border:1px solid rgba(255,255,255,.08);
   clip-path:var(--bevel-sm); transition:border-color .16s, background .16s, transform .16s;
 }
@@ -112,7 +113,7 @@
 .drillComplete { color:var(--ow-green); }
 .drillCardHeroes { display:flex; gap:4px; flex-wrap:wrap; margin-top:9px; min-height:24px; }
 .drillHeroThumb { width:24px; height:24px; border-radius:50%; object-fit:cover; opacity:.9; }
-.drillCardBottom { margin-top:9px; }
+.drillCardBottom { margin-top:auto; padding-top:9px; }
 .drillProgressBar { height:4px; background:rgba(255,255,255,.08); overflow:hidden; }
 .drillProgressFill {
   height:100%; width:100%; transform-origin:left; transform:scaleX(0);

@@ -305,7 +305,11 @@ a { color:var(--ow-orange); text-underline-offset:3px; }
 .cardTag { font-size:.8rem; color:var(--ow-text-dim); letter-spacing:.5px; }
 .cardTitle { font-size:.8rem; color:var(--ow-orange); opacity:.9; letter-spacing:.5px; }
 .cardMetaRow { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:3px; }
-.cardTools { display:flex; gap:2px; flex-shrink:0; align-items:center; }
+.cardTools {
+  display:flex; gap:2px; flex-shrink:0; align-items:center;
+  background:rgba(8,12,24,.62); padding:3px 4px; clip-path:var(--bevel-sm);
+  backdrop-filter:blur(3px);
+}
 
 .endorsement { width:22px; height:22px; flex-shrink:0; }
 
