@@ -57,6 +57,58 @@ export const HEROES = {
   zenyatta: { name: 'Zenyatta', role: 'support', portrait: 'https://d15f34w2p8l1cc.cloudfront.net/overwatch/7d1546b1541a8afc39353f9337a408d6275a141b0432b7e560ef61579996b0fc.png' },
 };
 
+/* ─── Live roster ───────────────────────────────────────────────────────────
+   The table above is the offline floor, not the ceiling: Blizzard ships new
+   heroes and this list used to go stale until someone edited it by hand.
+   refreshHeroes() folds whatever OverFast reports into HEROES at runtime —
+   names, portraits and roles for everyone — so a new hero shows up the first
+   time the page opens after their release. The last fetch is cached, so the
+   grid is never empty while the API naps. */
+const HERO_CACHE_KEY = 'ow.aim:heroes';
+const HERO_LIST_URL = 'https://overfast-api.tekrop.fr/heroes';
+
+function mergeHeroes(list) {
+  const added = [];
+  for (const h of list || []) {
+    if (!h || !h.key || !h.name) continue;
+    const rec = {
+      name: h.name,
+      portrait: h.portrait || HEROES[h.key]?.portrait || '',
+      role: (h.role && ROLES[h.role]) ? h.role : (HEROES[h.key]?.role || 'damage'),
+    };
+    if (!HEROES[h.key]) added.push(h.key);
+    HEROES[h.key] = { ...HEROES[h.key], ...rec };
+  }
+  return added;
+}
+
+/** Read the cache immediately so the first paint already has every hero. */
+export function hydrateHeroesFromCache() {
+  try {
+    const raw = localStorage.getItem(HERO_CACHE_KEY);
+    if (!raw) return [];
+    return mergeHeroes(JSON.parse(raw).list);
+  } catch { return []; }
+}
+
+/** Fetch the live roster, merge it in, and report which heroes were new. */
+export async function refreshHeroes({ timeout = 12000 } = {}) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeout);
+  try {
+    const res = await fetch(HERO_LIST_URL, { signal: ctrl.signal, headers: { Accept: 'application/json' } });
+    if (!res.ok) throw new Error(`heroes ${res.status}`);
+    const list = await res.json();
+    const added = mergeHeroes(list);
+    try {
+      localStorage.setItem(HERO_CACHE_KEY, JSON.stringify({ fetchedAt: Date.now(), list }));
+    } catch { /* private mode: this visit still got the merge */ }
+    return added;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export const ROLES = {
   tank: { name: 'Tank', color: '#5B9BD5' },
   damage: { name: 'Damage', color: '#E05D44' },

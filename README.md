@@ -7,7 +7,7 @@ Live at <https://ow.ojee.net>.
 
 ## What it does
 
-**Ranks** (`/`)
+**Ranks** (`/rank/`)
 
 - Tracks any number of accounts and shows their rank in **tank, damage, support and open queue**.
 - Click any player to make them the *anchor*; every other card then shows, per role, whether
@@ -18,7 +18,7 @@ Live at <https://ow.ojee.net>.
 - Card view for detail, table view for scanning a lot of people quickly.
 - PC / console toggle.
 
-**Aim** (`/aim.html`)
+**Aim** (`/aim/`)
 
 - Score entry for the Practice Range drills (unlimited ammo): drill → hero → score,
   with completion tracking for every drill/hero combination.
@@ -76,8 +76,9 @@ progress. Blizzard adjusts these between seasons — the thresholds live in one 
 ## Layout
 
 ```
-index.html      rank tracker markup and copy
-aim.html        aim tracker markup and copy
+index.html      root stub: one hop to /rank/
+rank/index.html rank tracker markup and copy
+aim/index.html  aim tracker markup and copy
 css/styles.css  shared system: tokens, backdrop, panels, both pages
 css/aim.css     aim-tracker components (roster, drills, charts, modal)
 js/ranks.js     ladder math + grouping rules   (pure, unit-testable)

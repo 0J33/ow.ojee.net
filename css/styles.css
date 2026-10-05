@@ -43,6 +43,11 @@
 
 * { box-sizing:border-box; }
 
+/* Buttons and fields don't inherit font by default — an unstyled one (the
+   character tiles were the live example) falls back to Arial. Base the whole
+   control family on the document; component rules still override. */
+button, input, select, textarea { font-family:inherit; }
+
 html { scrollbar-color:#39415a #070a13; scrollbar-width:thin; }
 
 body {

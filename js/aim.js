@@ -12,6 +12,7 @@ import {
   HEROES, ROLES, DRILLS, DRILL_CATEGORIES, PRESET_COLORS,
   generateId, getHeroesByRole, getReadableColor, getColorShadow,
   formatDateTime, normalizeAccountId, displayAccountId, isFullAccountTag, esc,
+  hydrateHeroesFromCache, refreshHeroes,
 } from './aim-data.js';
 import { owApi, exportData, parseImportFile } from './aim-api.js';
 import {
@@ -1569,8 +1570,21 @@ el.rosterRow.addEventListener('dblclick', (e) => {
 el.exportBtn.addEventListener('click', handleExport);
 el.importBtn.addEventListener('click', handleImportClick);
 
+// Cached roster first (every hero is on screen from the first paint), then
+// the live one — a hero Blizzard added last week is a hero this page knows.
+hydrateHeroesFromCache();
+
 render();
 loadData();
+
+refreshHeroes()
+  .then((added) => {
+    if (!added.length) return;
+    const names = added.map((k) => HEROES[k]?.name || k).join(', ');
+    toast(`New hero${added.length > 1 ? 'es' : ''}: ${names}`, 'info', 5200);
+    render();
+  })
+  .catch(() => { /* offline or API napping: the cached roster already loaded */ });
 setInterval(() => { if (!document.hidden) loadData({ silent: true }); }, 90_000);
 document.addEventListener('visibilitychange', () => {
   if (!document.hidden) loadData({ silent: true });
