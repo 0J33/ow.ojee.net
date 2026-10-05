@@ -1,10 +1,13 @@
-# ow.ojee.net — Overwatch 2 Rank Tracker
+# ow.ojee.net — Overwatch 2 rank + aim trackers
 
-Track a group of Overwatch 2 accounts and see, at a glance, **who you can queue with**.
+Two trackers for one group of friends: **who you can queue with**, and
+**how everyone's aim is coming along**.
 
 Live at <https://ow.ojee.net>.
 
 ## What it does
+
+**Ranks** (`/`)
 
 - Tracks any number of accounts and shows their rank in **tank, damage, support and open queue**.
 - Click any player to make them the *anchor*; every other card then shows, per role, whether
@@ -15,14 +18,34 @@ Live at <https://ow.ojee.net>.
 - Card view for detail, table view for scanning a lot of people quickly.
 - PC / console toggle.
 
+**Aim** (`/aim.html`)
+
+- Score entry for the Practice Range drills (unlimited ammo): drill → hero → score,
+  with completion tracking for every drill/hero combination.
+- Leaderboard (best + average, distribution chart), per-player stats (personal bests,
+  per-drill and per-hero breakdowns, score cluster), head-to-head compare (radar +
+  win counts), and a full history with inline edit/delete.
+- Every person carries a **main account**, any number of **alt accounts**, and the
+  **characters** they train — set once, and it is there on every device.
+
 ## How it works
 
-Static site, no backend. The browser talks directly to the
-[OverFast API](https://overfast-api.tekrop.fr), which scrapes public Blizzard career
-profiles and serves CORS-open JSON. GitHub Pages serves the files; there is no build step.
+Static site, no build step. The browser talks to two services:
 
-The tracked list lives in `localStorage`, per device. **Data → Export/Import** moves it
-between devices — it accepts an exported JSON blob or just a list of BattleTags, one per line.
+- [OverFast API](https://overfast-api.tekrop.fr) for Blizzard career profiles
+  (CORS-open), which is what keeps the rank cards live.
+- **server.ojee.net** — the shared backend (MongoDB) both trackers sync through.
+  The aim roster, accounts, characters and scores live there, and so do the rank
+  tracker's accounts, cached profiles and rank history. Same data for everyone,
+  on every device. localStorage keeps a copy so the pages still open (marked
+  offline) when the API cannot be reached.
+
+GitHub Pages serves the files; there is no build step.
+
+Account ownership is written by the aim tracker and enforced by the backend:
+a person's declared main and alt tags always appear in the rank list, tagged to
+them (**MAIN** / **ALT** chips on the card), and a stale client can neither drop
+nor invent an owner.
 
 ## Constraints worth knowing
 
@@ -32,6 +55,7 @@ between devices — it accepts an exported JSON blob or just a list of BattleTag
 | No placement progress ("3/10") and no predicted rank | Blizzard's public profile never exposes them; they exist only in-client. |
 | Ranks are not live | Blizzard's own profile data updates on a delay. Each profile reports the season its ranks belong to, so a friend who hasn't placed this season is flagged rather than shown as current. |
 | Adding by name needs disambiguation | Blizzard's search doesn't return the digits after the `#`, so the picker shows avatar, title and ranks to identify the right person. Adding by full BattleTag skips this. |
+| A person's account must be a full BattleTag (`Name#1234`) | Only a complete tag can be looked up directly; a bare name cannot be pinned to one account. |
 
 ## Grouping rules
 
@@ -52,15 +76,24 @@ progress. Blizzard adjusts these between seasons — the thresholds live in one 
 ## Layout
 
 ```
-index.html      markup and copy
-css/styles.css  Overwatch-flavoured theme, shared with ojee.net/ow
+index.html      rank tracker markup and copy
+aim.html        aim tracker markup and copy
+css/styles.css  shared system: tokens, backdrop, panels, both pages
+css/aim.css     aim-tracker components (roster, drills, charts, modal)
 js/ranks.js     ladder math + grouping rules   (pure, unit-testable)
 js/api.js       OverFast client, id resolution, concurrency pool
-js/store.js     localStorage, rank history, import/export
-js/app.js       rendering and events
-js/bg.js        animated plus-grid backdrop
+js/store.js     shared rank state: server sync + localStorage fallback
+js/app.js       rank tracker rendering and events
+js/aim.js       aim tracker rendering and events
+js/aim-data.js  heroes, drills, helpers
+js/aim-api.js   backend client (server.ojee.net)
+js/aim-charts.js five charts, drawn as SVG — no chart library
+js/icons.js     Material Symbols paths, inlined
 test/           unit tests for the ladder + grouping rules
 ```
+
+The backend itself lives in the **ojee.net** repo (`ojee/server`) and is deployed
+as the `ojee-server` service on the disinteg box.
 
 ## Development
 
@@ -70,4 +103,5 @@ node test/ranks.test.mjs                       # check the grouping rules
 ```
 
 No dependencies, no build. The grouping rules are the one part that can be wrong
-*silently* — a bad verdict still looks like a confident answer — so they have a test. Deployment is a push to `main`; GitHub Pages serves the repo root.
+*silently* — a bad verdict still looks like a confident answer — so they have a test.
+Deployment is a push to `main`; GitHub Pages serves the repo root.
