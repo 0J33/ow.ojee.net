@@ -9,5 +9,8 @@ an image model.
 | `favicon.svg` | Hand-authored crosshair/plus mark in the site accent gradient (`#F9A82A → #F06414`), commit "Orange crosshair favicon". |
 | `favicon-32.png` | Rasterised from `favicon.svg` at 32px, commit "Standardize the page title and link preview". |
 | `apple-touch-icon.png` | Rasterised from `favicon.svg` — crosshair at 70% on black, matching the other ojee tiles, commit "apple-touch-icon: crosshair at 70% on black…". |
-| `og.png` | Share card for the rank tracker, rendered at 1200×630 in the committed world (css/styles.css tokens: Teko + Rajdhani, `#05070f` range backdrop, amber glow, bevel tags) from the page it represents. Regenerated when the world changed — see DESIGN.md. |
-| `og-aim.png` | Same card, aim tracker words — rendered with `og.png` from the same markup so the pair is one component. |
+| `og.png` | Link-preview card for the rank tracker, 1200×630, drawn by `res/make-og.py` in the layout every ojee.net site shares: `favicon.svg` rasterised at 150px, the `css/styles.css` tokens (`#05070f` ground, `#111624` grid, `#F99E1A` accent), DejaVu Sans Mono. The earlier Teko/Rajdhani card is in git history. |
+| `og-aim.png` | Same card, aim tracker words — same script. |
+| `og-ow.png` | Same card for the root (`/`), which only forwards to `/rank/` — same script. |
+
+Regenerate the three cards with `python3 res/make-og.py` (needs Pillow and `rsvg-convert`).
